@@ -1,0 +1,17 @@
+{
+  "name": "FinTrack",
+  "short_name": "FinTrack",
+  "description": "Controlo financeiro pessoal — carteiras, orçamentos, metas e agenda financeira.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F4F6",
+  "theme_color": "#0E0E10",
+  "lang": "pt-MZ",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
