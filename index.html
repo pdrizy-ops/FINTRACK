@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>FinTrack</title>
+<title>trika</title>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#0E0E10">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="FinTrack">
+<meta name="apple-mobile-web-app-title" content="trika">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <link rel="icon" href="./icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -439,7 +439,7 @@ function renderVisao(){
   }).join('');
   const recent = [...state.transactions].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5).map(t=>{
     const c = catAny(t); const w = walletById(t.walletId);
-    return `<div class="list-row"><div class="icon-circle">${c.icon}</div>
+    return `<div class="list-row" style="cursor:pointer;" onclick="editTransactionModal('${t.id}')"><div class="icon-circle">${c.icon}</div>
       <div class="info"><div class="t">${escapeHtml(t.name)}</div><div class="s">${dispDate(t.date)} · ${w?w.name:''}</div></div>
       <div class="${t.type==='entrada'?'amt-pos':'amt-neg'}">${t.type==='entrada'?'+':'-'}${fmt(t.amount)}</div></div>`;
   }).join('');
@@ -453,7 +453,7 @@ function renderVisao(){
         <div class="stat-chip"><div class="label-eyebrow">Entradas</div><div class="val" style="color:var(--green)">+${fmt(ent)}</div></div>
         <div class="stat-chip"><div class="label-eyebrow">Saídas</div><div class="val" style="color:var(--red)">-${fmt(sai)}</div></div>
       </div>
-      <div class="ghost">FinTrack</div>
+      <div class="ghost">trika</div>
     </div>
     <div class="two-col">
       <button class="btn action-green btn-full" onclick="openTxModal('entrada')">↑ Nova entrada</button>
@@ -551,7 +551,7 @@ function renderNova(){
       <div class="label-eyebrow">Valor em ${state.settings.currency}</div>
       <div class="keypad-amount" style="color:${isIn?'var(--green)':'var(--red)'};margin-top:8px;">${isIn?'+':'-'}${amountDisplay}</div>
       <div class="keypad-sub">metical moçambicano</div>
-      <div class="ghost">FinTrack</div>
+      <div class="ghost">trika</div>
     </div>
     <div class="keypad-grid">
       ${['1','2','3','4','5','6','7','8','9','.','0','⌫'].map(k=>`<button class="${k==='⌫'?'del':''}" onclick="novaPressKey('${k==='⌫'?'DEL':k}')">${k}</button>`).join('')}
@@ -597,6 +597,7 @@ function saveNovaTx(){
   saveState();
   novaAmount='0'; novaRecurring=false;
   goTab('visao');
+  showToast(novaType==='entrada' ? 'Entrada registada.' : 'Saída registada.');
 }
 
 /* ============================= METAS ============================= */
@@ -606,7 +607,7 @@ function renderMetas(){
   const gasto = monthSaidas(ym);
   const poupado = Math.max(0, monthEntradas(ym)-gasto);
   const cats = despesasPorCategoria(ym);
-  const rows = CATS_OUT.filter(c=>state.budgets[c.id]!=null).map(c=>{
+  const rowsHtml = CATS_OUT.filter(c=>state.budgets[c.id]!=null).map(c=>{
     const spent = cats[c.id]||0; const budget = state.budgets[c.id]; const p = pctOf(spent,budget); const over = p>=90;
     return `<div class="budget-row">
       <div class="top">
@@ -616,7 +617,8 @@ function renderMetas(){
       <div class="progress-track"><div class="fill" style="width:${p}%;background:${over?'var(--red)':c.color};"></div></div>
     </div>`;
   }).join('');
-  const goalCards = state.goals.map(g=>{
+  const rows = rowsHtml || `<div style="text-align:center;padding:14px 0;color:#bbb;font-size:13px;">Ainda não definiste limites mensais.<br>Toca em "Editar" para criar o primeiro.</div>`;
+  const goalCardsHtml = state.goals.map(g=>{
     const p = pctOf(g.saved,g.target); const isLime = g.color==='#D6FF3F';
     return `<div class="goal-black">
       <div class="row"><div class="icn">${g.icon}</div>
@@ -625,8 +627,14 @@ function renderMetas(){
       </div>
       <div class="progress-track" style="background:rgba(255,255,255,.1);"><div class="fill" style="width:${p}%;background:${g.color};"></div></div>
       <div class="saved-row"><span class="a">Poupado: <b style="color:${g.color};">${fmt(g.saved)}</b></span><span class="b">Em falta: ${fmt(Math.max(g.target-g.saved,0))}</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button onclick="addFundsModal('${g.id}')" style="flex:1;background:rgba(255,255,255,.08);border:none;border-radius:10px;padding:8px 0;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">＋ Adicionar</button>
+        <button onclick="openGoalModal('${g.id}')" style="flex:1;background:rgba(255,255,255,.08);border:none;border-radius:10px;padding:8px 0;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">✎ Editar</button>
+        <button onclick="deleteGoal('${g.id}')" style="flex:1;background:rgba(248,113,113,.12);border:none;border-radius:10px;padding:8px 0;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">🗑 Apagar</button>
+      </div>
     </div>`;
   }).join('');
+  const goalCards = goalCardsHtml || `<div style="text-align:center;padding:20px 0;color:#bbb;font-size:13px;">Ainda não criaste nenhuma meta de poupança.</div>`;
   return `
   <div class="topbar"><div class="eyebrow">Planeamento</div><h1>Orçamentos &amp; Metas</h1></div>
   <div class="screen">
@@ -647,21 +655,24 @@ function renderMetas(){
 
 /* ============================= COMPRAS ============================= */
 function renderCompras(){
-  const lists = state.shoppingLists.map(l=>{
+  const listsHtml = state.shoppingLists.map(l=>{
     const spent = l.items.filter(i=>i.done).reduce((s,i)=>s+i.val,0);
     const done = l.items.filter(i=>i.done).length;
     const p = pctOf(spent,l.budget); const over = spent>l.budget;
     const goal = state.goals.find(g=>g.id===l.goalId);
     const open = openShoppingId===l.id;
-    const items = l.items.map(i=>`<div class="item-row" onclick="toggleItem('${l.id}','${i.id}')">
-      <div class="check ${i.done?'done':''}">${i.done?'✓':''}</div>
-      <div class="desc ${i.done?'strike':''}">${escapeHtml(i.desc)}</div>
-      <div class="val">${fmt(i.val)}</div></div>`).join('');
+    const items = l.items.map(i=>`<div class="item-row">
+      <div class="check ${i.done?'done':''}" onclick="toggleItem('${l.id}','${i.id}')">${i.done?'✓':''}</div>
+      <div class="desc ${i.done?'strike':''}" style="cursor:pointer;" onclick="editShoppingItemModal('${l.id}','${i.id}')">${escapeHtml(i.desc)}</div>
+      <div class="val">${fmt(i.val)}</div>
+      <button onclick="deleteShoppingItem('${l.id}','${i.id}')" style="background:none;border:none;color:var(--red2);font-size:13px;cursor:pointer;padding:2px 4px;">🗑</button>
+    </div>`).join('') || `<div style="text-align:center;padding:10px 0;color:#bbb;font-size:12.5px;">Sem itens ainda.</div>`;
     return `<div class="shop-card">
       <div class="head" onclick="toggleShoppingOpen('${l.id}')">
         <div class="bar" style="background:${over?'var(--red)':'var(--lime)'};"></div>
         <div style="flex:1;"><div class="t">${escapeHtml(l.name)}</div><div class="s">${done}/${l.items.length} itens · ${fmt(spent)} gastos</div></div>
         <div style="text-align:right;"><div class="pct" style="color:${over?'var(--red2)':'var(--green2)'};">${p}%</div><div class="s">do orçamento</div></div>
+        <button onclick="event.stopPropagation(); deleteShoppingList('${l.id}')" style="background:none;border:none;color:var(--red2);font-size:14px;cursor:pointer;padding:2px 6px;">🗑</button>
         <span class="arrow">${open?'▲':'▼'}</span>
       </div>
       ${open?`<div class="shop-body">
@@ -675,11 +686,49 @@ function renderCompras(){
       </div>`:''}
     </div>`;
   }).join('');
+  const lists = listsHtml || `<div class="card" style="text-align:center;padding:28px 0;color:#bbb;font-size:13px;">Ainda não tens listas de compras.<br>Cria a primeira abaixo.</div>`;
   return `
   <div class="topbar"><div class="eyebrow">Listas de compras</div><h1>Compras</h1></div>
   <div class="screen">${lists}<button class="btn btn-black btn-full" style="color:var(--lime);" onclick="openShoppingListModal()">+ Nova lista de compras</button></div>`;
 }
 function toggleShoppingOpen(id){ openShoppingId = openShoppingId===id ? null : id; render(); }
+function deleteShoppingList(id){
+  const l = state.shoppingLists.find(x=>x.id===id); if(!l) return;
+  confirmDeleteModal('Apagar lista de compras', `Isto vai remover "${escapeHtml(l.name)}" e todos os seus ${l.items.length} itens.`, ()=>{
+    state.shoppingLists = state.shoppingLists.filter(x=>x.id!==id);
+    if(openShoppingId===id) openShoppingId=null;
+    saveState(); render(); showToast('Lista apagada.');
+  });
+}
+function editShoppingItemModal(listId,itemId){
+  const l = state.shoppingLists.find(x=>x.id===listId); const it = l.items.find(x=>x.id===itemId); if(!it) return;
+  openModalHtml(`
+    <div class="drag"></div>
+    <h3>Editar item</h3>
+    <div class="fields">
+      <div><label class="fl">Nome do item</label><input type="text" id="m-item-desc" value="${escapeHtml(it.desc)}"></div>
+      <div><label class="fl">Valor (${state.settings.currency})</label><input type="number" id="m-item-val" value="${it.val}"></div>
+    </div>
+    <div class="modal-error" id="modalError" style="display:none;"></div>
+    <button class="confirm-btn" onclick="submitEditShoppingItem('${listId}','${itemId}')">Guardar</button>
+    <div class="cancel-link" onclick="closeModal()">Cancelar</div>
+  `);
+}
+function submitEditShoppingItem(listId,itemId){
+  const l = state.shoppingLists.find(x=>x.id===listId); const it = l.items.find(x=>x.id===itemId); if(!it) return;
+  const desc = document.getElementById('m-item-desc').value.trim();
+  const val = parseFloat(document.getElementById('m-item-val').value) || 0;
+  if(!desc){ modalError('Dá um nome ao item.'); return; }
+  it.desc=desc; it.val=val;
+  saveState(); closeModal(); render(); showToast('Item actualizado.');
+}
+function deleteShoppingItem(listId,itemId){
+  const l = state.shoppingLists.find(x=>x.id===listId); const it = l.items.find(x=>x.id===itemId); if(!it) return;
+  confirmDeleteModal('Apagar item', `Remover "${escapeHtml(it.desc)}" da lista?`, ()=>{
+    l.items = l.items.filter(x=>x.id!==itemId);
+    saveState(); render(); showToast('Item apagado.');
+  });
+}
 function toggleItem(listId,itemId){ const l=state.shoppingLists.find(x=>x.id===listId); const it=l.items.find(x=>x.id===itemId); it.done=!it.done; saveState(); render(); }
 
 /* ============================= RECORRENTES ============================= */
@@ -687,7 +736,7 @@ function renderRecorrentes(){
   const ent = state.recurring.filter(r=>r.type==='entrada').reduce((s,r)=>s+r.amount,0);
   const sai = state.recurring.filter(r=>r.type==='saida').reduce((s,r)=>s+r.amount,0);
   const months=['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-  const rows = [...state.recurring].sort((a,b)=>a.day-b.day).map(r=>{
+  const rowsHtml = [...state.recurring].sort((a,b)=>a.day-b.day).map(r=>{
     const isNextMonth = r.day < 11;
     const mLabel = isNextMonth ? months[7] : 'Jul';
     return `<div class="rec-row">
@@ -698,8 +747,13 @@ function renderRecorrentes(){
         <div class="${r.type==='entrada'?'amt-pos':'amt-neg'}">${r.type==='entrada'?'+':'-'}${fmt(r.amount)}</div>
         <div style="font-size:9px;color:#bbb;text-transform:uppercase;letter-spacing:.04em;">${r.type==='entrada'?'entrada':'saída'}</div>
       </div>
+      <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
+        <button onclick="openRecurringModal('${r.id}')" style="background:none;border:none;font-size:12px;cursor:pointer;padding:2px;color:#999;">✎</button>
+        <button onclick="deleteRecurring('${r.id}')" style="background:none;border:none;font-size:12px;cursor:pointer;padding:2px;color:var(--red2);">🗑</button>
+      </div>
     </div>`;
   }).join('');
+  const rows = rowsHtml || `<div style="text-align:center;padding:20px 0;color:#bbb;font-size:13px;">Ainda não tens movimentos recorrentes.</div>`;
   return `
   <div class="topbar"><div class="eyebrow">Movimentos automáticos</div><h1>Recorrentes</h1></div>
   <div class="screen">
@@ -714,18 +768,35 @@ function renderRecorrentes(){
 }
 
 /* ============================= PLANILHAS ============================= */
+let planFilterText = '';
+let planFilterCat = '';
 function renderPlanilhas(){
   const ym = currentYM();
   const ent = monthEntradas(ym), sai = monthSaidas(ym);
-  const rows = [...monthTx(ym)].sort((a,b)=>b.date.localeCompare(a.date)).map(t=>{
+  const allTx = [...monthTx(ym)].sort((a,b)=>b.date.localeCompare(a.date));
+  const filtered = allTx.filter(t=>{
+    const matchText = !planFilterText || t.name.toLowerCase().includes(planFilterText.toLowerCase());
+    const matchCat = !planFilterCat || t.catId===planFilterCat;
+    return matchText && matchCat;
+  });
+  const allCatOpts = [...CATS_OUT, ...CATS_IN];
+  const rows = filtered.map(t=>{
     const c = catAny(t);
-    return `<div style="display:grid;grid-template-columns:1fr 90px 55px 85px;padding:11px 0;border-bottom:1px solid var(--bdr);align-items:center;">
-      <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px;">${escapeHtml(t.name)}</div>
-      <div style="font-size:11px;color:#999;">${c.label}</div>
-      <div style="font-size:11px;color:#aaa;">${t.date.slice(8,10)}/${t.date.slice(5,7)}</div>
-      <div style="font-size:13px;font-weight:700;" class="${t.type==='entrada'?'amt-pos':'amt-neg'}">${t.type==='entrada'?'+':'-'}${fmt(t.amount)}</div>
+    return `<div style="display:flex;align-items:center;gap:8px;padding:11px 0;border-bottom:1px solid var(--bdr);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t.name)}</div>
+        <div style="font-size:11px;color:#999;margin-top:1px;">${c.label} · ${t.date.slice(8,10)}/${t.date.slice(5,7)}</div>
+      </div>
+      <div style="font-size:13px;font-weight:700;flex-shrink:0;" class="${t.type==='entrada'?'amt-pos':'amt-neg'}">${t.type==='entrada'?'+':'-'}${fmt(t.amount)}</div>
+      <div style="display:flex;gap:4px;flex-shrink:0;">
+        <button onclick="editTransactionModal('${t.id}')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:4px;color:#999;">✎</button>
+        <button onclick="deleteTransaction('${t.id}')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:4px;color:var(--red2);">🗑</button>
+      </div>
     </div>`;
   }).join('');
+  const emptyState = allTx.length===0
+    ? `<div style="text-align:center;padding:28px 0;color:#bbb;font-size:13px;">Ainda não tens transações este mês.<br>Usa "Nova entrada/saída" para começar.</div>`
+    : (filtered.length===0 ? `<div style="text-align:center;padding:28px 0;color:#bbb;font-size:13px;">Nenhum resultado para este filtro.</div>` : rows);
   return `
   <div class="topbar"><div class="eyebrow">Importar / Exportar dados</div><h1>Planilhas</h1></div>
   <div class="screen">
@@ -740,26 +811,96 @@ function renderPlanilhas(){
       <div class="stat-box" style="flex:1;"><div class="label-eyebrow">Saídas Jul</div><div class="val" style="color:var(--red2);font-size:16px;">-${fmt(sai)}</div></div>
       <div class="stat-box" style="flex:1;"><div class="label-eyebrow">Saldo</div><div class="val" style="font-size:16px;">+${fmt(ent-sai)}</div></div>
     </div>
+    <div class="two-col">
+      <input type="text" id="planSearch" placeholder="Pesquisar transação..." value="${escapeHtml(planFilterText)}" oninput="setPlanFilterText(this.value)" style="flex:1.4;">
+      <select id="planCatFilter" onchange="setPlanFilterCat(this.value)" style="flex:1;">
+        <option value="">Todas categorias</option>
+        ${allCatOpts.map(c=>`<option value="${c.id}" ${planFilterCat===c.id?'selected':''}>${c.icon} ${c.label}</option>`).join('')}
+      </select>
+    </div>
+    ${(planFilterText||planFilterCat) ? `<div class="cancel-link" style="text-align:right;margin-top:-8px;" onclick="clearPlanFilters()">Limpar filtros</div>` : ''}
     <div class="card" style="padding:0;overflow:hidden;">
       <div style="padding:14px 16px;border-bottom:1px solid var(--bdr);display:flex;justify-content:space-between;align-items:center;">
-        <div style="font-size:13px;font-weight:700;">Transações — Julho 2026</div><span style="font-size:11px;color:#aaa;">${monthTx(ym).length} registos</span>
+        <div style="font-size:13px;font-weight:700;">Transações — Julho 2026</div><span style="font-size:11px;color:#aaa;">${filtered.length}/${allTx.length} registos</span>
       </div>
-      <div style="padding:0 16px;">${rows}</div>
+      <div style="padding:0 16px;">${emptyState}</div>
     </div>
     <div style="text-align:center;color:#bbb;font-size:12px;line-height:1.6;">Os dados vivem neste dispositivo.<br>Exporte regularmente para não perder nada.</div>
   </div>`;
 }
-function exportJSON(){ const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='fintrack-dados.json'; a.click(); }
+function setPlanFilterText(v){ planFilterText=v; renderPlanFilterOnly(); }
+function setPlanFilterCat(v){ planFilterCat=v; render(); }
+function clearPlanFilters(){ planFilterText=''; planFilterCat=''; render(); }
+function renderPlanFilterOnly(){
+  // avoid losing input focus on every keystroke by re-rendering only the list area
+  const root = document.getElementById('screen-root');
+  root.innerHTML = renderPlanilhas();
+  const input = document.getElementById('planSearch');
+  if(input){ input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+}
+function editTransactionModal(id){
+  const t = state.transactions.find(x=>x.id===id); if(!t) return;
+  const cats = t.type==='entrada' ? CATS_IN : CATS_OUT;
+  openModalHtml(`
+    <div class="drag"></div>
+    <h3>Editar transação</h3>
+    <div class="fields">
+      <div><label class="fl">Descrição</label><input type="text" id="m-tx-desc" value="${escapeHtml(t.name)}"></div>
+      <div><label class="fl">Valor (${state.settings.currency})</label><input type="number" id="m-tx-val" value="${t.amount}"></div>
+      <div><label class="fl">Categoria</label><select id="m-tx-cat">${cats.map(c=>`<option value="${c.id}" ${c.id===t.catId?'selected':''}>${c.icon} ${c.label}</option>`).join('')}</select></div>
+      <div><label class="fl">Carteira</label><select id="m-tx-wallet">${state.wallets.map(w=>`<option value="${w.id}" ${w.id===t.walletId?'selected':''}>${escapeHtml(w.name)}</option>`).join('')}</select></div>
+      <div><label class="fl">Data</label><input type="date" id="m-tx-date" value="${t.date}"></div>
+    </div>
+    <div class="modal-error" id="modalError" style="display:none;"></div>
+    <button class="confirm-btn" onclick="submitEditTransaction('${id}')">Guardar alterações</button>
+    <div class="cancel-link" onclick="closeModal()">Cancelar</div>
+  `);
+}
+function submitEditTransaction(id){
+  const t = state.transactions.find(x=>x.id===id); if(!t) return;
+  const desc = document.getElementById('m-tx-desc').value.trim();
+  const val = parseFloat(document.getElementById('m-tx-val').value);
+  const catId = document.getElementById('m-tx-cat').value;
+  const newWalletId = document.getElementById('m-tx-wallet').value;
+  const date = document.getElementById('m-tx-date').value || t.date;
+  if(!desc || !val || val<=0){ modalError('Preenche a descrição e um valor válido.'); return; }
+  // reverse old effect on old wallet, then apply new effect on (possibly new) wallet
+  const oldWallet = walletById(t.walletId);
+  if(oldWallet) oldWallet.balance += (t.type==='entrada' ? -t.amount : t.amount);
+  const newWallet = walletById(newWalletId);
+  if(newWallet) newWallet.balance += (t.type==='entrada' ? val : -val);
+  t.name=desc; t.amount=val; t.catId=catId; t.walletId=newWalletId; t.date=date;
+  saveState(); closeModal(); render(); showToast('Transação actualizada.');
+}
+function deleteTransaction(id){
+  const t = state.transactions.find(x=>x.id===id); if(!t) return;
+  const w = walletById(t.walletId);
+  confirmDeleteModal('Apagar transação', `Isto vai remover "${escapeHtml(t.name)}" (${fmt(t.amount)}) da carteira ${w?escapeHtml(w.name):'—'} e ajustar o saldo.`, ()=>{
+    if(w) w.balance += (t.type==='entrada' ? -t.amount : t.amount);
+    state.transactions = state.transactions.filter(x=>x.id!==id);
+    saveState(); render(); showToast('Transação apagada.');
+  });
+}
+function exportJSON(){ const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='trika-dados.json'; a.click(); }
 function exportCSV(){
   const rows=[['Descrição','Categoria','Data','Tipo','Valor'], ...state.transactions.map(t=>[t.name,catAny(t).label,t.date,t.type,t.amount])];
   const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='fintrack-transacoes.csv'; a.click();
+  const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='trika-transacoes.csv'; a.click();
 }
 function triggerImport(){ document.getElementById('importFile').click(); }
 function importJSON(ev){
   const file=ev.target.files[0]; if(!file) return;
   const reader=new FileReader();
-  reader.onload=()=>{ try{ state={...defaultState(),...JSON.parse(reader.result)}; saveState(); render(); showToast('Dados importados com sucesso.'); }catch(e){ showToast('Ficheiro inválido.', true); } };
+  reader.onload=()=>{
+    let parsed;
+    try{ parsed = JSON.parse(reader.result); }
+    catch(e){ showToast('Ficheiro inválido — não é um JSON legível.', true); ev.target.value=''; return; }
+    const looksValid = parsed && typeof parsed==='object' && Array.isArray(parsed.wallets) && Array.isArray(parsed.transactions);
+    if(!looksValid){ showToast('Este ficheiro não parece ser um backup do trika.', true); ev.target.value=''; return; }
+    state = { ...defaultState(), ...parsed };
+    saveState(); render(); showToast('Dados importados com sucesso.');
+    ev.target.value='';
+  };
   reader.readAsText(file);
 }
 
@@ -780,10 +921,11 @@ function renderAgenda(){
   const cellHtml = cells.map(c=>`<div class="cal-cell ${c.muted?'muted':''} ${c.sel?'sel':(c.today?'today':'')}" ${c.iso?`onclick="selectDay('${c.iso}')"`:''}>
       ${c.d}${c.hasTask?`<div class="cal-dot ${c.sel?'sel-dot':''}"></div>`:''}</div>`).join('');
   const tasks = state.calendarTasks[selectedDay] || [];
-  const taskRows = tasks.map(t=>`<div class="task-row ${t.done?'done':''}" onclick="toggleTask('${selectedDay}','${t.id}')">
-      <div class="check ${t.done?'done':''}">${t.done?'✓':''}</div>
-      <span style="flex:1;font-size:13px;font-weight:500;${t.done?'text-decoration:line-through;':''}">${escapeHtml(t.text)}</span>
-      <span class="task-cat-pill" style="background:${CAT_COLORS[t.cat]||'#ccc'}20;color:${CAT_COLORS[t.cat]||'#888'};">${t.cat}</span></div>`).join('');
+  const taskRows = tasks.map(t=>`<div class="task-row ${t.done?'done':''}">
+      <div class="check ${t.done?'done':''}" onclick="toggleTask('${selectedDay}','${t.id}')">${t.done?'✓':''}</div>
+      <span style="flex:1;font-size:13px;font-weight:500;cursor:pointer;${t.done?'text-decoration:line-through;':''}" onclick="toggleTask('${selectedDay}','${t.id}')">${escapeHtml(t.text)}</span>
+      <span class="task-cat-pill" style="background:${CAT_COLORS[t.cat]||'#ccc'}20;color:${CAT_COLORS[t.cat]||'#888'};">${t.cat}</span>
+      <button onclick="deleteTask('${selectedDay}','${t.id}')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:2px 4px;color:var(--red2);">🗑</button></div>`).join('');
   const [sy,sm,sd] = selectedDay.split('-');
   return `
   <div class="topbar"><div class="eyebrow">Agenda financeira</div><h1>Calendário</h1></div>
@@ -807,13 +949,22 @@ function renderAgenda(){
 function calMonth(delta){ calCursor=new Date(calCursor.getFullYear(),calCursor.getMonth()+delta,1); render(); }
 function selectDay(iso){ selectedDay=iso; render(); }
 function addTask(){
-  const text=document.getElementById('newTaskText').value.trim(); if(!text) return;
+  const textEl = document.getElementById('newTaskText');
+  const text=textEl.value.trim(); if(!text) return;
   const cat=document.getElementById('newTaskCat').value;
   if(!state.calendarTasks[selectedDay]) state.calendarTasks[selectedDay]=[];
   state.calendarTasks[selectedDay].push({ id:uid('ct'), text, cat, done:false });
-  saveState(); render();
+  saveState(); render(); showToast('Tarefa adicionada.');
 }
 function toggleTask(day,id){ const t=state.calendarTasks[day].find(x=>x.id===id); t.done=!t.done; saveState(); render(); }
+function deleteTask(day,id){
+  const t = state.calendarTasks[day]?.find(x=>x.id===id); if(!t) return;
+  confirmDeleteModal('Apagar tarefa', `Remover "${escapeHtml(t.text)}" da agenda?`, ()=>{
+    state.calendarTasks[day] = state.calendarTasks[day].filter(x=>x.id!==id);
+    if(state.calendarTasks[day].length===0) delete state.calendarTasks[day];
+    saveState(); render(); showToast('Tarefa apagada.');
+  });
+}
 
 /* ============================= COMPARAÇÃO ============================= */
 function renderComparacao(){
@@ -846,15 +997,18 @@ afterRenderHooks.comparacao = function(){
   const kfmt = v => (v/1000).toFixed(0)+'K';
   const commonScale = { x:{ grid:{display:false}, ticks:{color:'#aaa',font:{size:10}} }, y:{ grid:{color:gridColor,borderDash:[3,3]}, ticks:{color:'#aaa',font:{size:10}, callback:kfmt}, beginAtZero:true } };
   const c1=document.getElementById('lineChart1');
-  if(c1) new Chart(c1,{ type:'line', data:{ labels, datasets:[
+  destroyChart('cmpLine1');
+  if(c1) trackChart('cmpLine1', new Chart(c1,{ type:'line', data:{ labels, datasets:[
     { label:'Receitas', data:hist.map(h=>h.receitas), borderColor:'#4ADE80', backgroundColor:'#4ADE80', borderWidth:2.5, pointRadius:3, tension:.35 },
     { label:'Despesas', data:hist.map(h=>h.despesas), borderColor:'#F87171', backgroundColor:'#F87171', borderWidth:2.5, pointRadius:3, tension:.35 },
-  ]}, options:{ plugins:{legend:{display:false}, tooltip:{backgroundColor:'#18181B', titleColor:'#aaa', bodyColor:'#fff', cornerRadius:12, callbacks:{ label:(ctx)=>`${state.settings.currency} ${(ctx.parsed.y/1000).toFixed(1)}K` }}}, scales:commonScale, maintainAspectRatio:false }});
+  ]}, options:{ plugins:{legend:{display:false}, tooltip:{backgroundColor:'#18181B', titleColor:'#aaa', bodyColor:'#fff', cornerRadius:12, callbacks:{ label:(ctx)=>`${state.settings.currency} ${(ctx.parsed.y/1000).toFixed(1)}K` }}}, scales:commonScale, maintainAspectRatio:false }}));
   const c2=document.getElementById('barChart1');
-  if(c2) new Chart(c2,{ type:'bar', data:{ labels, datasets:[{ label:'Despesas', data:hist.map(h=>h.despesas), backgroundColor:'#F87171', borderRadius:6 }] }, options:{ plugins:{legend:{display:false}, tooltip:{backgroundColor:'#18181B', cornerRadius:12, callbacks:{ label:(ctx)=>`${state.settings.currency} ${(ctx.parsed.y/1000).toFixed(1)}K` }}}, scales:commonScale, maintainAspectRatio:false }});
+  destroyChart('cmpBar1');
+  if(c2) trackChart('cmpBar1', new Chart(c2,{ type:'bar', data:{ labels, datasets:[{ label:'Despesas', data:hist.map(h=>h.despesas), backgroundColor:'#F87171', borderRadius:6 }] }, options:{ plugins:{legend:{display:false}, tooltip:{backgroundColor:'#18181B', cornerRadius:12, callbacks:{ label:(ctx)=>`${state.settings.currency} ${(ctx.parsed.y/1000).toFixed(1)}K` }}}, scales:commonScale, maintainAspectRatio:false }}));
   const c3=document.getElementById('lineChart2');
+  destroyChart('cmpLine2');
   let acc=0; const poup=hist.map(h=>{ acc+=(h.receitas-h.despesas); return acc; });
-  if(c3) new Chart(c3,{ type:'line', data:{ labels, datasets:[{ label:'Poupança', data:poup, borderColor:state.settings.accent, backgroundColor:state.settings.accent, borderWidth:2.5, pointRadius:3, tension:.35 }] }, options:{ plugins:{legend:{display:false}, tooltip:{backgroundColor:'#18181B', cornerRadius:12, callbacks:{ label:(ctx)=>`${state.settings.currency} ${(ctx.parsed.y/1000).toFixed(1)}K` }}}, scales:commonScale, maintainAspectRatio:false }});
+  if(c3) trackChart('cmpLine2', new Chart(c3,{ type:'line', data:{ labels, datasets:[{ label:'Poupança', data:poup, borderColor:state.settings.accent, backgroundColor:state.settings.accent, borderWidth:2.5, pointRadius:3, tension:.35 }] }, options:{ plugins:{legend:{display:false}, tooltip:{backgroundColor:'#18181B', cornerRadius:12, callbacks:{ label:(ctx)=>`${state.settings.currency} ${(ctx.parsed.y/1000).toFixed(1)}K` }}}, scales:commonScale, maintainAspectRatio:false }}));
 };
 
 /* ============================= CONFIG ============================= */
@@ -907,7 +1061,7 @@ function renderConfig(){
       <div class="danger-title" style="margin-bottom:14px;">Zona de perigo</div>
       <button class="btn btn-danger-out btn-full" onclick="wipeData()">🗑 Apagar todos os dados</button>
     </div>
-    <div class="footer-credit">FinTrack · por Pedro Halar Junior · Acto Studio © 2026</div>
+    <div class="footer-credit">trika · por Pedro Halar Junior · Acto Studio © 2026</div>
   </div>`;
 }
 function triggerImport2(){ document.getElementById('importFile2').click(); }
@@ -921,7 +1075,7 @@ function wipeData(){
   openModalHtml(`
     <div class="drag"></div>
     <h3 style="color:var(--red2);">Apagar todos os dados</h3>
-    <p style="font-size:13px;color:#999;line-height:1.6;">Isto vai apagar TODOS os dados do FinTrack neste dispositivo — carteiras, transacções, metas, tudo. Esta acção não pode ser desfeita.</p>
+    <p style="font-size:13px;color:#999;line-height:1.6;">Isto vai apagar TODOS os dados do trika neste dispositivo — carteiras, transacções, metas, tudo. Esta acção não pode ser desfeita.</p>
     <button class="confirm-btn" style="background:var(--red2);" onclick="confirmWipeData()">Sim, apagar tudo</button>
     <div class="cancel-link" onclick="closeModal()">Cancelar</div>
   `);
@@ -946,29 +1100,72 @@ function showToast(msg, isError){
 function openModalHtml(html){ document.getElementById('modalBody').innerHTML = html; document.getElementById('modalBg').classList.add('show'); }
 function closeModal(){ document.getElementById('modalBg').classList.remove('show'); }
 function modalError(msg){ const el=document.getElementById('modalError'); if(el){ el.textContent=msg; el.style.display='block'; } }
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
 
-function openTxModal(type){ novaType=type; goTab('nova'); }
-
-function openWalletModal(){
+let pendingDeleteAction = null;
+function confirmDeleteModal(title, desc, action){
+  pendingDeleteAction = action;
   openModalHtml(`
     <div class="drag"></div>
-    <h3>Nova carteira</h3>
-    <div class="fields">
-      <div><label class="fl">Nome</label><input type="text" id="m-wallet-name" placeholder="Ex: Ponto24"></div>
-      <div><label class="fl">Saldo inicial (${state.settings.currency})</label><input type="number" id="m-wallet-balance" placeholder="0,00"></div>
-    </div>
-    <div class="modal-error" id="modalError" style="display:none;"></div>
-    <button class="confirm-btn" onclick="submitWalletModal()">Criar carteira</button>
+    <h3 style="color:var(--red2);">${title}</h3>
+    <p style="font-size:13px;color:#999;line-height:1.6;">${desc}</p>
+    <button class="confirm-btn" style="background:var(--red2);" onclick="runPendingDelete()">Sim, apagar</button>
     <div class="cancel-link" onclick="closeModal()">Cancelar</div>
   `);
 }
-function submitWalletModal(){
+function runPendingDelete(){ if(pendingDeleteAction) pendingDeleteAction(); pendingDeleteAction=null; closeModal(); }
+
+const chartInstances = {};
+function destroyChart(key){ if(chartInstances[key]){ chartInstances[key].destroy(); delete chartInstances[key]; } }
+function trackChart(key, chart){ chartInstances[key] = chart; }
+
+function openTxModal(type){ novaType=type; goTab('nova'); }
+
+function openWalletModal(editId){
+  const w = editId ? walletById(editId) : null;
+  openModalHtml(`
+    <div class="drag"></div>
+    <h3>${w?'Editar carteira':'Nova carteira'}</h3>
+    <div class="fields">
+      <div><label class="fl">Nome</label><input type="text" id="m-wallet-name" placeholder="Ex: Ponto24" value="${w?escapeHtml(w.name):''}"></div>
+      <div><label class="fl">Saldo ${w?'':'inicial'} (${state.settings.currency})</label><input type="number" id="m-wallet-balance" placeholder="0,00" value="${w?w.balance:''}"></div>
+    </div>
+    <div class="modal-error" id="modalError" style="display:none;"></div>
+    <button class="confirm-btn" onclick="submitWalletModal(${w?`'${w.id}'`:'null'})">${w?'Guardar alterações':'Criar carteira'}</button>
+    <div class="cancel-link" onclick="closeModal()">Cancelar</div>
+  `);
+}
+function submitWalletModal(editId){
   const name = document.getElementById('m-wallet-name').value.trim();
   if(!name){ modalError('Dá um nome à carteira.'); return; }
   const balance = parseFloat(document.getElementById('m-wallet-balance').value) || 0;
+  if(editId){
+    const w = walletById(editId);
+    w.name = name; w.balance = balance;
+    saveState(); closeModal(); render(); showToast('Carteira actualizada.');
+    return;
+  }
   const colors = ['#D6FF3F','#FF6B35','#A78BFA','#60A5FA','#F472B6'];
   state.wallets.push({ id:uid('w'), name, balance, number:'**** '+Math.floor(1000+Math.random()*9000), color:colors[state.wallets.length%colors.length], main:false });
-  saveState(); closeModal(); render();
+  saveState(); closeModal(); render(); showToast('Carteira criada.');
+}
+function deleteWallet(id){
+  if(state.wallets.length<=1){ showToast('Precisas de manter pelo menos uma carteira.', true); return; }
+  const w = walletById(id); if(!w) return;
+  const txCount = state.transactions.filter(t=>t.walletId===id).length;
+  const otherWallet = state.wallets.find(x=>x.id!==id);
+  const desc = txCount>0
+    ? `Esta carteira tem ${txCount} transação(ões). Elas serão movidas para "${escapeHtml(otherWallet.name)}" e este saldo somado lá.`
+    : `Isto vai remover "${escapeHtml(w.name)}" definitivamente.`;
+  confirmDeleteModal('Apagar carteira', desc, ()=>{
+    if(txCount>0){
+      state.transactions.forEach(t=>{ if(t.walletId===id) t.walletId=otherWallet.id; });
+      otherWallet.balance += w.balance;
+    }
+    state.wallets = state.wallets.filter(x=>x.id!==id);
+    if(state.activeWallet===id) state.activeWallet = state.wallets[0].id;
+    saveState(); render(); showToast('Carteira apagada.');
+  });
 }
 
 function showWalletDetails(id){
@@ -981,7 +1178,11 @@ function showWalletDetails(id){
       <div><label class="fl">Saldo</label><div style="font-size:20px;font-weight:800;">${fmt(w.balance)}</div></div>
       <div><label class="fl">Tipo</label><div style="font-size:14px;">${w.main?'Carteira principal':'Carteira secundária'}</div></div>
     </div>
-    <div class="cancel-link" onclick="closeModal()" style="margin-top:16px;">Fechar</div>
+    <div class="two" style="margin-top:16px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="openWalletModal('${w.id}')">✎ Editar</button>
+      <button class="btn btn-danger-out" style="flex:1;" onclick="deleteWallet('${w.id}')">🗑 Apagar</button>
+    </div>
+    <div class="cancel-link" onclick="closeModal()" style="margin-top:12px;">Fechar</div>
   `);
 }
 
@@ -1011,57 +1212,96 @@ function submitTransferModal(){
   const w1 = state.wallets[fromIdx], w2 = state.wallets[toIdx];
   if(val<=0 || val>w1.balance){ modalError('Valor inválido ou saldo insuficiente.'); return; }
   w1.balance -= val; w2.balance += val;
-  saveState(); closeModal(); render();
+  saveState(); closeModal(); render(); showToast('Transferência concluída.');
 }
 
 function openBudgetModal(){
-  const opts = CATS_OUT.filter(c=>state.budgets[c.id]!=null)
-    .map(c=>`<option value="${c.id}">${c.icon} ${c.label} — actual ${fmt(state.budgets[c.id])}</option>`).join('');
+  const opts = CATS_OUT.map(c=>`<option value="${c.id}">${c.icon} ${c.label}${state.budgets[c.id]!=null?` — actual ${fmt(state.budgets[c.id])}`:' — sem limite'}</option>`).join('');
   openModalHtml(`
     <div class="drag"></div>
     <h3>Editar limite mensal</h3>
     <div class="fields">
-      <div><label class="fl">Categoria</label><select id="m-budget-cat">${opts}</select></div>
-      <div><label class="fl">Novo limite (${state.settings.currency})</label><input type="number" id="m-budget-val" placeholder="0.00"></div>
+      <div><label class="fl">Categoria</label><select id="m-budget-cat" onchange="prefillBudgetVal(this.value)">${opts}</select></div>
+      <div><label class="fl">Novo limite (${state.settings.currency}) — 0 remove o limite</label><input type="number" id="m-budget-val" placeholder="0.00" value="${state.budgets[CATS_OUT[0].id]||''}"></div>
     </div>
     <div class="modal-error" id="modalError" style="display:none;"></div>
     <button class="confirm-btn" onclick="submitBudgetModal()">Guardar limite</button>
   `);
 }
+function prefillBudgetVal(catId){
+  const el = document.getElementById('m-budget-val');
+  if(el) el.value = state.budgets[catId] || '';
+}
 function submitBudgetModal(){
   const cat = document.getElementById('m-budget-cat').value;
   const val = parseFloat(document.getElementById('m-budget-val').value);
-  if(!val || val<=0){ modalError('Introduz um valor válido.'); return; }
-  state.budgets[cat] = val;
-  saveState(); closeModal(); render();
+  if(isNaN(val) || val<0){ modalError('Introduz um valor válido (0 para remover).'); return; }
+  if(val===0){ delete state.budgets[cat]; }
+  else { state.budgets[cat] = val; }
+  saveState(); closeModal(); render(); showToast(val===0?'Limite removido.':'Limite guardado.');
 }
 
 let modalGoalIcon = '🎯';
-function openGoalModal(){
-  modalGoalIcon = '🎯';
+function openGoalModal(editId){
+  const g = editId ? state.goals.find(x=>x.id===editId) : null;
+  modalGoalIcon = g ? g.icon : '🎯';
   const icons = ['🎯','✈️','🏠','🚗','🛡️','🎓','💍','📱','💻','🏥'];
   openModalHtml(`
     <div class="drag"></div>
-    <h3>Nova meta de poupança</h3>
+    <h3>${g?'Editar meta':'Nova meta de poupança'}</h3>
     <div class="fields">
-      <div><label class="fl">Nome</label><input type="text" id="m-goal-name" placeholder="Ex: Fundo de estudos"></div>
-      <div><label class="fl">Objectivo (${state.settings.currency})</label><input type="number" id="m-goal-target" placeholder="0.00"></div>
+      <div><label class="fl">Nome</label><input type="text" id="m-goal-name" placeholder="Ex: Fundo de estudos" value="${g?escapeHtml(g.name):''}"></div>
+      <div><label class="fl">Objectivo (${state.settings.currency})</label><input type="number" id="m-goal-target" placeholder="0.00" value="${g?g.target:''}"></div>
       <div><label class="fl">Ícone</label><div class="emoji-grid" id="m-goal-icons">${icons.map(i=>`<div class="emoji-opt ${i===modalGoalIcon?'sel':''}" onclick="selectGoalIcon('${i}')">${i}</div>`).join('')}</div></div>
     </div>
     <div class="modal-error" id="modalError" style="display:none;"></div>
-    <button class="confirm-btn" onclick="submitGoalModal()">Criar meta</button>
+    <button class="confirm-btn" onclick="submitGoalModal(${g?`'${g.id}'`:'null'})">${g?'Guardar alterações':'Criar meta'}</button>
   `);
 }
 function selectGoalIcon(i){
   modalGoalIcon = i;
   document.querySelectorAll('#m-goal-icons .emoji-opt').forEach(el=>el.classList.toggle('sel', el.textContent.trim()===i));
 }
-function submitGoalModal(){
+function submitGoalModal(editId){
   const name = document.getElementById('m-goal-name').value.trim();
   const target = parseFloat(document.getElementById('m-goal-target').value);
   if(!name || !target || target<=0){ modalError('Preenche o nome e um objectivo válido.'); return; }
+  if(editId){
+    const g = state.goals.find(x=>x.id===editId);
+    g.name=name; g.target=target; g.icon=modalGoalIcon;
+    saveState(); closeModal(); render(); showToast('Meta actualizada.');
+    return;
+  }
   state.goals.push({ id:uid('g'), name, icon:modalGoalIcon, target, saved:0, color:ACCENT_OPTS[state.goals.length%ACCENT_OPTS.length].color });
-  saveState(); closeModal(); render();
+  saveState(); closeModal(); render(); showToast('Meta criada.');
+}
+function addFundsModal(id){
+  const g = state.goals.find(x=>x.id===id); if(!g) return;
+  openModalHtml(`
+    <div class="drag"></div>
+    <h3>Adicionar a "${escapeHtml(g.name)}"</h3>
+    <div class="fields">
+      <div><label class="fl">Valor a adicionar (${state.settings.currency})</label><input type="number" id="m-funds-val" placeholder="0.00"></div>
+    </div>
+    <div class="modal-error" id="modalError" style="display:none;"></div>
+    <button class="confirm-btn" onclick="submitAddFunds('${id}')">Adicionar</button>
+    <div class="cancel-link" onclick="closeModal()">Cancelar</div>
+  `);
+}
+function submitAddFunds(id){
+  const g = state.goals.find(x=>x.id===id); if(!g) return;
+  const val = parseFloat(document.getElementById('m-funds-val').value);
+  if(!val || val<=0){ modalError('Introduz um valor válido.'); return; }
+  g.saved += val;
+  saveState(); closeModal(); render(); showToast('Fundos adicionados à meta.');
+}
+function deleteGoal(id){
+  const g = state.goals.find(x=>x.id===id); if(!g) return;
+  confirmDeleteModal('Apagar meta', `Isto vai remover a meta "${escapeHtml(g.name)}". O valor já poupado (${fmt(g.saved)}) não é retirado de nenhuma carteira, só deixa de ser acompanhado.`, ()=>{
+    state.goals = state.goals.filter(x=>x.id!==id);
+    state.shoppingLists.forEach(l=>{ if(l.goalId===id) l.goalId=null; });
+    saveState(); render(); showToast('Meta apagada.');
+  });
 }
 
 function openShoppingListModal(){
@@ -1084,7 +1324,7 @@ function submitShoppingListModal(){
   const goalId = document.getElementById('m-list-goal').value || null;
   if(!name){ modalError('Dá um nome à lista.'); return; }
   state.shoppingLists.push({ id:uid('sl'), name, budget, goalId, items:[] });
-  saveState(); closeModal(); render();
+  saveState(); closeModal(); render(); showToast('Lista criada.');
 }
 
 function addShoppingItem(listId){
@@ -1104,26 +1344,27 @@ function submitShoppingItemModal(listId){
   const val = parseFloat(document.getElementById('m-item-val').value) || 0;
   if(!desc){ modalError('Dá um nome ao item.'); return; }
   state.shoppingLists.find(x=>x.id===listId).items.push({ id:uid('i'), desc, val, done:false });
-  saveState(); closeModal(); render();
+  saveState(); closeModal(); render(); showToast('Item adicionado.');
 }
 
 let modalRecurType = 'saida';
-function openRecurringModal(){
-  modalRecurType = 'saida';
+function openRecurringModal(editId){
+  const r = editId ? state.recurring.find(x=>x.id===editId) : null;
+  modalRecurType = r ? r.type : 'saida';
   openModalHtml(`
     <div class="drag"></div>
-    <h3>Novo recorrente</h3>
+    <h3>${r?'Editar recorrente':'Novo recorrente'}</h3>
     <div class="toggle-seg" style="margin-bottom:14px;">
-      <button class="on-saida" id="m-rec-saida" onclick="setModalRecurType('saida')">↓ Saída</button>
-      <button id="m-rec-entrada" onclick="setModalRecurType('entrada')">↑ Entrada</button>
+      <button class="${modalRecurType==='saida'?'on-saida':''}" id="m-rec-saida" onclick="setModalRecurType('saida')">↓ Saída</button>
+      <button class="${modalRecurType==='entrada'?'on-entrada':''}" id="m-rec-entrada" onclick="setModalRecurType('entrada')">↑ Entrada</button>
     </div>
     <div class="fields">
-      <div><label class="fl">Nome</label><input type="text" id="m-rec-name" placeholder="Ex: Seguro auto"></div>
-      <div><label class="fl">Valor (${state.settings.currency})</label><input type="number" id="m-rec-val" placeholder="0.00"></div>
-      <div><label class="fl">Dia do mês</label><input type="number" id="m-rec-day" min="1" max="31" value="1"></div>
+      <div><label class="fl">Nome</label><input type="text" id="m-rec-name" placeholder="Ex: Seguro auto" value="${r?escapeHtml(r.name):''}"></div>
+      <div><label class="fl">Valor (${state.settings.currency})</label><input type="number" id="m-rec-val" placeholder="0.00" value="${r?r.amount:''}"></div>
+      <div><label class="fl">Dia do mês</label><input type="number" id="m-rec-day" min="1" max="31" value="${r?r.day:1}"></div>
     </div>
     <div class="modal-error" id="modalError" style="display:none;"></div>
-    <button class="confirm-btn" onclick="submitRecurringModal()">Criar recorrente</button>
+    <button class="confirm-btn" onclick="submitRecurringModal(${r?`'${r.id}'`:'null'})">${r?'Guardar alterações':'Criar recorrente'}</button>
   `);
 }
 function setModalRecurType(t){
@@ -1131,13 +1372,26 @@ function setModalRecurType(t){
   document.getElementById('m-rec-saida').className = t==='saida' ? 'on-saida' : '';
   document.getElementById('m-rec-entrada').className = t==='entrada' ? 'on-entrada' : '';
 }
-function submitRecurringModal(){
+function submitRecurringModal(editId){
   const name = document.getElementById('m-rec-name').value.trim();
   const amount = parseFloat(document.getElementById('m-rec-val').value);
   const day = parseInt(document.getElementById('m-rec-day').value) || 1;
   if(!name || !amount || amount<=0){ modalError('Preenche o nome e um valor válido.'); return; }
+  if(editId){
+    const r = state.recurring.find(x=>x.id===editId);
+    r.name=name; r.amount=amount; r.type=modalRecurType; r.day=Math.min(31,Math.max(1,day));
+    saveState(); closeModal(); render(); showToast('Recorrente actualizado.');
+    return;
+  }
   state.recurring.push({ id:uid('r'), name, icon: modalRecurType==='entrada'?'💼':'🔁', amount, type:modalRecurType, freq:'Mensal', day:Math.min(31,Math.max(1,day)) });
-  saveState(); closeModal(); render();
+  saveState(); closeModal(); render(); showToast('Recorrente criado.');
+}
+function deleteRecurring(id){
+  const r = state.recurring.find(x=>x.id===id); if(!r) return;
+  confirmDeleteModal('Apagar recorrente', `Isto vai remover "${escapeHtml(r.name)}" da lista de movimentos programados.`, ()=>{
+    state.recurring = state.recurring.filter(x=>x.id!==id);
+    saveState(); render(); showToast('Recorrente apagado.');
+  });
 }
 
 /* ============================= INIT ============================= */

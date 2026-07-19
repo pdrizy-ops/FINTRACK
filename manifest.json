@@ -1,6 +1,6 @@
 {
-  "name": "FinTrack",
-  "short_name": "FinTrack",
+  "name": "trika",
+  "short_name": "trika",
   "description": "Controlo financeiro pessoal — carteiras, orçamentos, metas e agenda financeira.",
   "start_url": "./index.html",
   "scope": "./",
