@@ -229,14 +229,15 @@ input[type=range]{ width:100%; accent-color:var(--accent); }
 .bottomnav{ position:fixed; bottom:0; left:0; right:0; max-width:430px; margin:0 auto; background:rgba(255,255,255,0.94); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); border-top:1px solid var(--bdr); display:flex; overflow-x:auto; padding:0 4px calc(0px + env(safe-area-inset-bottom)); z-index:50; }
 body.dark .bottomnav{ background:rgba(20,20,22,0.94); }
 .navitem{ flex-shrink:0; min-width:52px; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px 4px 8px; cursor:pointer; color:#bbb; position:relative; }
-.navitem .ic{ font-size:16px; margin-bottom:2px; }
+.navitem .ic{ margin-bottom:2px; display:flex; align-items:center; justify-content:center; color:#bbb; }
+.navitem.active .ic{ color:var(--ink); }
 .navitem .lb{ font-size:9px; font-weight:500; }
 .navitem.active{ color:var(--ink); }
 .navitem.active .lb{ font-weight:700; }
 body.dark .navitem.active{ color:#fff; }
 .navitem .dot-active{ position:absolute; bottom:6px; width:4px; height:4px; border-radius:50%; background:var(--accent); }
 .navitem.nova{ min-width:56px; padding:6px 4px; }
-.fab{ width:46px; height:46px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:900; color:#000; margin-bottom:2px; transform:translateY(-8px); box-shadow:0 4px 16px rgba(0,0,0,.25); }
+.fab{ width:46px; height:46px; border-radius:50%; background:var(--accent); display:flex; align-items:center; justify-content:center; color:#000; margin-bottom:2px; transform:translateY(-8px); box-shadow:0 4px 16px rgba(0,0,0,.25); }
 .navitem.nova .lb{ color:#888; font-weight:700; }
 .footer-credit{ text-align:center; font-size:11px; color:#bbb; padding:16px 0 4px; }
 ::-webkit-scrollbar{ display:none; }
@@ -253,8 +254,8 @@ body.dark .navitem.active{ color:#fff; }
 .modal .cancel-link{ text-align:center; margin-top:12px; font-size:12px; color:#999; cursor:pointer; }
 .modal-error{ color:var(--red2); font-size:12px; margin-top:10px; }
 .emoji-grid{ display:flex; flex-wrap:wrap; gap:8px; }
-.emoji-opt{ width:38px; height:38px; border-radius:12px; background:#fff; border:1.5px solid var(--bdr); display:flex; align-items:center; justify-content:center; font-size:18px; cursor:pointer; }
-.emoji-opt.sel{ border-color:var(--coal); background:var(--coal); }
+.emoji-opt{ width:38px; height:38px; border-radius:12px; background:#fff; border:1.5px solid var(--bdr); display:flex; align-items:center; justify-content:center; cursor:pointer; color:#6b6b74; }
+.emoji-opt.sel{ border-color:var(--coal); background:var(--coal); color:#fff; }
 </style>
 </head>
 <body>
@@ -270,26 +271,84 @@ body.dark .navitem.active{ color:#fff; }
 <script>
 /* ============================= DATA ============================= */
 const CATS_OUT = [
-  { id:'alimentacao', label:'Alimentação', icon:'🍽️', color:'#FF6B35' },
-  { id:'transporte',  label:'Transporte',  icon:'🚌', color:'#A78BFA' },
-  { id:'casa',        label:'Casa',        icon:'🏠', color:'#60A5FA' },
-  { id:'saude',       label:'Saúde',       icon:'💊', color:'#4ADE80' },
-  { id:'lazer',       label:'Lazer',       icon:'🎭', color:'#F59E0B' },
-  { id:'telecoms',    label:'Telecoms',    icon:'📱', color:'#F472B6' },
-  { id:'outros',      label:'Outros',      icon:'📦', color:'#9CA3AF' },
+  { id:'alimentacao', label:'Alimentação', icon:'utensils', color:'#FF6B35' },
+  { id:'transporte',  label:'Transporte',  icon:'bus', color:'#A78BFA' },
+  { id:'casa',        label:'Casa',        icon:'home', color:'#60A5FA' },
+  { id:'saude',       label:'Saúde',       icon:'heart-pulse', color:'#4ADE80' },
+  { id:'lazer',       label:'Lazer',       icon:'film', color:'#F59E0B' },
+  { id:'telecoms',    label:'Telecoms',    icon:'smartphone', color:'#F472B6' },
+  { id:'outros',      label:'Outros',      icon:'package', color:'#9CA3AF' },
 ];
 const CATS_IN = [
-  { id:'salario',       label:'Salário',       icon:'💼' },
-  { id:'freelance',     label:'Freelance',     icon:'💻' },
-  { id:'transferencia', label:'Transferência', icon:'🏦' },
-  { id:'investimento',  label:'Investimento',  icon:'📈' },
-  { id:'presente',      label:'Presente',      icon:'🎁' },
+  { id:'salario',       label:'Salário',       icon:'briefcase' },
+  { id:'freelance',     label:'Freelance',     icon:'laptop' },
+  { id:'transferencia', label:'Transferência', icon:'landmark' },
+  { id:'investimento',  label:'Investimento',  icon:'trending-up' },
+  { id:'presente',      label:'Presente',      icon:'gift' },
 ];
+const ICONS = {
+  'utensils': `<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /> <path d="M7 2v20" /> <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />`,
+  'bus': `<path d="M8 6v6" /> <path d="M15 6v6" /> <path d="M2 12h19.6" /> <path d="M18 18h3s.5-1.7.8-2.8c.1-.4.2-.8.2-1.2 0-.4-.1-.8-.2-1.2l-1.4-5C20.1 6.8 19.1 6 18 6H4a2 2 0 0 0-2 2v10h3" /> <circle cx="7" cy="18" r="2" /> <path d="M9 18h5" /> <circle cx="16" cy="18" r="2" />`,
+  'home': `<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />`,
+  'heart-pulse': `<path d="M2 9.5a5.5 5.5 0 0 1 9.591-3.676.56.56 0 0 0 .818 0A5.49 5.49 0 0 1 22 9.5c0 2.29-1.5 4-3 5.5l-5.492 5.313a2 2 0 0 1-3 .019L5 15c-1.5-1.5-3-3.2-3-5.5" /> <path d="M3.22 13H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27" />`,
+  'film': `<rect width="18" height="18" x="3" y="3" rx="2" /> <path d="M7 3v18" /> <path d="M3 7.5h4" /> <path d="M3 12h18" /> <path d="M3 16.5h4" /> <path d="M17 3v18" /> <path d="M17 7.5h4" /> <path d="M17 16.5h4" />`,
+  'smartphone': `<rect width="14" height="20" x="5" y="2" rx="2" ry="2" /> <path d="M12 18h.01" />`,
+  'package': `<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z" /> <path d="M12 22V12" /> <polyline points="3.29 7 12 12 20.71 7" /> <path d="m7.5 4.27 9 5.15" />`,
+  'briefcase': `<path d="M16 20V4a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" /> <rect width="20" height="14" x="2" y="6" rx="2" />`,
+  'laptop': `<path d="M18 5a2 2 0 0 1 2 2v8.526a2 2 0 0 0 .212.897l1.068 2.127a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45l1.068-2.127A2 2 0 0 0 4 15.526V7a2 2 0 0 1 2-2z" /> <path d="M20.054 15.987H3.946" />`,
+  'landmark': `<path d="M10 18v-7" /> <path d="M11.119 2.205a2 2 0 0 1 1.762 0l7.84 3.846A.5.5 0 0 1 20.5 7h-17a.5.5 0 0 1-.22-.949z" /> <path d="M14 18v-7" /> <path d="M18 18v-7" /> <path d="M3 22h18" /> <path d="M6 18v-7" />`,
+  'trending-up': `<path d="M16 7h6v6" /> <path d="m22 7-8.5 8.5-5-5L2 17" />`,
+  'gift': `<path d="M12 7v14" /> <path d="M20 11v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8" /> <path d="M7.5 7a1 1 0 0 1 0-5A4.8 8 0 0 1 12 7a4.8 8 0 0 1 4.5-5 1 1 0 0 1 0 5" /> <rect x="3" y="7" width="18" height="4" rx="1" />`,
+  'banknote': `<rect width="20" height="12" x="2" y="6" rx="2" /> <circle cx="12" cy="12" r="2" /> <path d="M6 12h.01M18 12h.01" />`,
+  'target': `<circle cx="12" cy="12" r="10" /> <circle cx="12" cy="12" r="6" /> <circle cx="12" cy="12" r="2" />`,
+  'plane': `<path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z" />`,
+  'car': `<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" /> <circle cx="7" cy="17" r="2" /> <path d="M9 17h6" /> <circle cx="17" cy="17" r="2" />`,
+  'shield': `<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />`,
+  'graduation-cap': `<path d="M21.42 10.922a1 1 0 0 0-.019-1.838L12.83 5.18a2 2 0 0 0-1.66 0L2.6 9.08a1 1 0 0 0 0 1.832l8.57 3.908a2 2 0 0 0 1.66 0z" /> <path d="M22 10v6" /> <path d="M6 12.5V16a6 3 0 0 0 12 0v-3.5" />`,
+  'gem': `<path d="M10.5 3 8 9l4 13 4-13-2.5-6" /> <path d="M17 3a2 2 0 0 1 1.6.8l3 4a2 2 0 0 1 .013 2.382l-7.99 10.986a2 2 0 0 1-3.247 0l-7.99-10.986A2 2 0 0 1 2.4 7.8l2.998-3.997A2 2 0 0 1 7 3z" /> <path d="M2 9h20" />`,
+  'cross': `<path d="M4 9a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4a1 1 0 0 1 1 1v4a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2v-4a1 1 0 0 1 1-1h4a2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-4a1 1 0 0 1-1-1V4a2 2 0 0 0-2-2h-2a2 2 0 0 0-2 2v4a1 1 0 0 1-1 1z" />`,
+  'wallet': `<path d="M19 7V4a1 1 0 0 0-1-1H5a2 2 0 0 0 0 4h15a1 1 0 0 1 1 1v4h-3a2 2 0 0 0 0 4h3a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1" /> <path d="M3 5v14a2 2 0 0 0 2 2h15a1 1 0 0 0 1-1v-4" />`,
+  'layout-grid': `<rect width="7" height="7" x="3" y="3" rx="1" /> <rect width="7" height="7" x="14" y="3" rx="1" /> <rect width="7" height="7" x="14" y="14" rx="1" /> <rect width="7" height="7" x="3" y="14" rx="1" />`,
+  'table-2': `<path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />`,
+  'calendar': `<path d="M8 2v4" /> <path d="M16 2v4" /> <rect width="18" height="18" x="3" y="4" rx="2" /> <path d="M3 10h18" />`,
+  'bar-chart-3': `<path d="M3 3v16a2 2 0 0 0 2 2h16" /> <path d="M18 17V9" /> <path d="M13 17V5" /> <path d="M8 17v-3" />`,
+  'settings': `<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" /> <circle cx="12" cy="12" r="3" />`,
+  'repeat': `<path d="m17 2 4 4-4 4" /> <path d="M3 11v-1a4 4 0 0 1 4-4h14" /> <path d="m7 22-4-4 4-4" /> <path d="M21 13v1a4 4 0 0 1-4 4H3" />`,
+  'shopping-cart': `<circle cx="8" cy="21" r="1" /> <circle cx="19" cy="21" r="1" /> <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />`,
+  'lightbulb': `<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5" /> <path d="M9 18h6" /> <path d="M10 22h4" />`,
+  'piggy-bank': `<path d="M11 17h3v2a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3a3.16 3.16 0 0 0 2-2h1a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1h-1a5 5 0 0 0-2-4V3a4 4 0 0 0-3.2 1.6l-.3.4H11a6 6 0 0 0-6 6v1a5 5 0 0 0 2 4v3a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1z" /> <path d="M16 10h.01" /> <path d="M2 8v1a2 2 0 0 0 2 2h1" />`,
+  'trash-2': `<path d="M10 11v6" /> <path d="M14 11v6" /> <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /> <path d="M3 6h18" /> <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />`,
+  'pencil': `<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z" /> <path d="m15 5 4 4" />`,
+  'check': `<path d="M20 6 9 17l-5-5" />`,
+  'arrow-up': `<path d="m5 12 7-7 7 7" /> <path d="M12 19V5" />`,
+  'arrow-down': `<path d="M12 5v14" /> <path d="m19 12-7 7-7-7" />`,
+  'plus': `<path d="M5 12h14" /> <path d="M12 5v14" />`,
+  'clock': `<circle cx="12" cy="12" r="10" /> <path d="M12 6v6l4 2" />`,
+  'users': `<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /> <path d="M16 3.128a4 4 0 0 1 0 7.744" /> <path d="M22 21v-2a4 4 0 0 0-3-3.87" /> <circle cx="9" cy="7" r="4" />`,
+  'shopping-bag': `<path d="M16 10a4 4 0 0 1-8 0" /> <path d="M3.103 6.034h17.794" /> <path d="M3.4 5.467a2 2 0 0 0-.4 1.2V20a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6.667a2 2 0 0 0-.4-1.2l-2-2.667A2 2 0 0 0 17 2H7a2 2 0 0 0-1.6.8z" />`,
+  'credit-card': `<rect width="20" height="14" x="2" y="5" rx="2" /> <line x1="2" x2="22" y1="10" y2="10" />`,
+  'x': `<path d="M18 6 6 18" /> <path d="m6 6 12 12" />`,
+  'chevron-left': `<path d="m15 18-6-6 6-6" />`,
+  'chevron-right': `<path d="m9 18 6-6-6-6" />`,
+  'chevron-up': `<path d="m18 15-6-6-6 6" />`,
+  'chevron-down': `<path d="m6 9 6 6 6-6" />`,
+  'circle': `<circle cx="12" cy="12" r="10" />`,
+  'music': `<path d="M9 18V5l12-2v13" /> <circle cx="6" cy="18" r="3" /> <circle cx="18" cy="16" r="3" />`,
+  'delete': `<path d="M10 5a2 2 0 0 0-1.344.519l-6.328 5.74a1 1 0 0 0 0 1.481l6.328 5.741A2 2 0 0 0 10 19h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" /> <path d="m12 9 6 6" /> <path d="m18 9-6 6" />`,
+  'arrow-left-right': `<path d="M8 3 4 7l4 4" /> <path d="M4 7h16" /> <path d="m16 21 4-4-4-4" /> <path d="M20 17H4" />`,
+};
+
+function icon(name, size){
+  size = size || 18;
+  const paths = ICONS[name] || ICONS['circle'];
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:block;">${paths}</svg>`;
+}
+
 const CURRENCIES = { MT:'Metical', ZAR:'Rand', USD:'Dólar', EUR:'Euro' };
 const CAT_COLORS = { pagamento:'#60A5FA', compra:'#F59E0B', reunião:'#A78BFA', prazo:'#F87171' };
 const WALLET_TYPES = ['Carteira Móvel', 'Banco', 'Dinheiro', 'Cartão', 'Outro'];
 const NETWORK_PRESETS = ['M-Pesa', 'e-Mola', 'mKesh', 'Visa', 'Mastercard', 'Dinheiro'];
-const NETWORK_ICONS = { 'M-Pesa':'📱', 'e-Mola':'📱', 'mKesh':'📱', 'Dinheiro':'💵' }; // Visa/Mastercard/others fall back to the gold chip
+const NETWORK_ICONS = { 'M-Pesa':'smartphone', 'e-Mola':'smartphone', 'mKesh':'smartphone', 'Dinheiro':'banknote' }; // Visa/Mastercard/others fall back to the gold chip
 const ACCENT_OPTS = [
   { color:'#D6FF3F', label:'Lima (padrão)' },
   { color:'#60A5FA', label:'Azul' },
@@ -338,9 +397,9 @@ function defaultState(){
     ],
     budgets:{ alimentacao:12000, transporte:5000, casa:18000, saude:4000, lazer:6000, telecoms:2000 },
     goals:[
-      { id:'zanzibar', name:'Viagem Zanzibar',  icon:'✈️', target:120000, saved:48000,  color:'#D6FF3F' },
-      { id:'fundo',    name:'Fundo Emergência', icon:'🛡️', target:200000, saved:85000,  color:'#60A5FA' },
-      { id:'carro',    name:'Toyota Corolla',   icon:'🚗', target:850000, saved:125000, color:'#A78BFA' },
+      { id:'zanzibar', name:'Viagem Zanzibar',  icon:'plane', target:120000, saved:48000,  color:'#D6FF3F' },
+      { id:'fundo',    name:'Fundo Emergência', icon:'shield', target:200000, saved:85000,  color:'#60A5FA' },
+      { id:'carro',    name:'Toyota Corolla',   icon:'car', target:850000, saved:125000, color:'#A78BFA' },
     ],
     shoppingLists:[
       { id:'sl1', name:'Compras do Mês', budget:8000, goalId:'fundo', items:[
@@ -357,12 +416,12 @@ function defaultState(){
       ]},
     ],
     recurring:[
-      { id:'r1', name:'Netflix',         icon:'🎭', amount:450,   type:'saida',   freq:'Mensal', day:15 },
-      { id:'r2', name:'Internet Fibra',  icon:'📱', amount:2800,  type:'saida',   freq:'Mensal', day:1  },
-      { id:'r3', name:'Salário',         icon:'💼', amount:85000, type:'entrada', freq:'Mensal', day:5  },
-      { id:'r4', name:'Poupança Auto',   icon:'🛡️', amount:5000,  type:'saida',   freq:'Mensal', day:10 },
-      { id:'r5', name:'Renda do Espaço', icon:'🏠', amount:12000, type:'entrada', freq:'Mensal', day:1  },
-      { id:'r6', name:'Spotify Família', icon:'🎵', amount:380,   type:'saida',   freq:'Mensal', day:20 },
+      { id:'r1', name:'Netflix',         icon:'film', amount:450,   type:'saida',   freq:'Mensal', day:15 },
+      { id:'r2', name:'Internet Fibra',  icon:'smartphone', amount:2800,  type:'saida',   freq:'Mensal', day:1  },
+      { id:'r3', name:'Salário',         icon:'briefcase', amount:85000, type:'entrada', freq:'Mensal', day:5  },
+      { id:'r4', name:'Poupança Auto',   icon:'shield', amount:5000,  type:'saida',   freq:'Mensal', day:10 },
+      { id:'r5', name:'Renda do Espaço', icon:'home', amount:12000, type:'entrada', freq:'Mensal', day:1  },
+      { id:'r6', name:'Spotify Família', icon:'music', amount:380,   type:'saida',   freq:'Mensal', day:20 },
     ],
     calendarTasks:{
       '2026-07-05':[{ id:'ct1', text:'Receber salário M-Pesa', cat:'pagamento', done:true }],
@@ -428,23 +487,23 @@ function applyTheme(){
 
 /* ============================= NAV ============================= */
 const NAV = [
-  { id:'visao',       ic:'⊞',  lb:'Visão' },
-  { id:'carteiras',   ic:'▣',  lb:'Carteiras' },
-  { id:'nova',        ic:'+',  lb:'Nova', fab:true },
-  { id:'metas',       ic:'◎',  lb:'Metas' },
-  { id:'compras',     ic:'🛒', lb:'Compras' },
-  { id:'recorrentes', ic:'↻',  lb:'Recorr.' },
-  { id:'planilhas',   ic:'▦',  lb:'Planilha' },
-  { id:'agenda',      ic:'📅', lb:'Agenda' },
-  { id:'comparacao',  ic:'📊', lb:'Gráficos' },
-  { id:'config',      ic:'⚙',  lb:'Config' },
+  { id:'visao',       ic:'layout-grid',  lb:'Visão' },
+  { id:'carteiras',   ic:'wallet',       lb:'Carteiras' },
+  { id:'nova',        ic:'plus',         lb:'Nova', fab:true },
+  { id:'metas',       ic:'target',       lb:'Metas' },
+  { id:'compras',     ic:'shopping-cart',lb:'Compras' },
+  { id:'recorrentes', ic:'repeat',       lb:'Recorr.' },
+  { id:'planilhas',   ic:'table-2',      lb:'Planilha' },
+  { id:'agenda',      ic:'calendar',     lb:'Agenda' },
+  { id:'comparacao',  ic:'bar-chart-3',  lb:'Gráficos' },
+  { id:'config',      ic:'settings',     lb:'Config' },
 ];
 function renderNav(){
   const el = document.getElementById('bottomnav');
   el.innerHTML = NAV.map(n=>{
     const active = currentTab===n.id;
-    if(n.fab) return `<div class="navitem nova" onclick="goTab('${n.id}')"><div class="fab">+</div><div class="lb">Nova</div></div>`;
-    return `<div class="navitem ${active?'active':''}" onclick="goTab('${n.id}')"><div class="ic">${n.ic}</div><div class="lb">${n.lb}</div>${active?'<div class="dot-active"></div>':''}</div>`;
+    if(n.fab) return `<div class="navitem nova" onclick="goTab('${n.id}')"><div class="fab">${icon('plus',20)}</div><div class="lb">Nova</div></div>`;
+    return `<div class="navitem ${active?'active':''}" onclick="goTab('${n.id}')"><div class="ic">${icon(n.ic,18)}</div><div class="lb">${n.lb}</div>${active?'<div class="dot-active"></div>':''}</div>`;
   }).join('');
 }
 function goTab(id){ currentTab=id; if(id==='nova'){ /* keep novaType */ } render(); window.scrollTo(0,0); }
@@ -473,12 +532,12 @@ function renderVisao(){
   }).join('');
   const recent = [...state.transactions].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5).map(t=>{
     const c = catAny(t); const w = walletById(t.walletId);
-    return `<div class="list-row" style="cursor:pointer;" onclick="editTransactionModal('${t.id}')"><div class="icon-circle">${c.icon}</div>
+    return `<div class="list-row" style="cursor:pointer;" onclick="editTransactionModal('${t.id}')"><div class="icon-circle">${icon(c.icon)}</div>
       <div class="info"><div class="t">${escapeHtml(t.name)}</div><div class="s">${dispDate(t.date)} · ${w?w.name:''}</div></div>
       <div class="${t.type==='entrada'?'amt-pos':'amt-neg'}">${t.type==='entrada'?'+':'-'}${fmt(t.amount)}</div></div>`;
   }).join('');
   return `
-  <div class="topbar"><div class="eyebrow">Sexta-feira, 11 Jul 2026</div><h1>Contas em dia? 👋</h1></div>
+  <div class="topbar"><div class="eyebrow">Sexta-feira, 11 Jul 2026</div><h1>Contas em dia?</h1></div>
   <div class="screen">
     <div class="card-black">
       <div class="label-eyebrow">Saldo Total</div>
@@ -490,10 +549,10 @@ function renderVisao(){
       <div class="ghost">trika</div>
     </div>
     <div class="two-col">
-      <button class="btn action-green btn-full" onclick="openTxModal('entrada')">↑ Nova entrada</button>
-      <button class="btn action-red btn-full" onclick="openTxModal('saida')">↓ Nova saída</button>
+      <button class="btn action-green btn-full" onclick="openTxModal('entrada')" style="display:flex;align-items:center;justify-content:center;gap:6px;">${icon('arrow-up',16)} Nova entrada</button>
+      <button class="btn action-red btn-full" onclick="openTxModal('saida')" style="display:flex;align-items:center;justify-content:center;gap:6px;">${icon('arrow-down',16)} Nova saída</button>
     </div>
-    <div class="tip-banner">💡 <div><b>Dica:</b> ${savingsTip()}</div></div>
+    <div class="tip-banner">${icon('lightbulb',16)} <div><b>Dica:</b> ${savingsTip()}</div></div>
     <div class="card-black">
       <div class="section-title" style="margin-bottom:14px;"><h3 style="color:#fff;">Despesas por categoria</h3><span style="color:var(--lime);font-size:11px;font-weight:600;">Jul 2026</span></div>
       <div class="donut-wrap">
@@ -540,7 +599,7 @@ function renderCarteiras(){
         <div><div class="name">${escapeHtml(x.name)}</div><div style="font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;">${escapeHtml(x.type||'Carteira')}</div>${x.main?`<div class="badge-principal" style="background:${x.color};color:${x.color==='#D6FF3F'?'#000':'#fff'}">PRINCIPAL</div>`:''}</div>
         <div class="radio-dot"><div class="in"></div></div>
       </div>
-      ${emojiIcon ? `<div class="chip-icon" style="background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:16px;">${emojiIcon}</div>` : `<div class="chip-icon"></div>`}
+      ${emojiIcon ? `<div class="chip-icon" style="background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;color:#fff;">${icon(emojiIcon,16)}</div>` : `<div class="chip-icon"></div>`}
       <div class="num">${x.number}</div>
       <div class="bal-row"><div><div class="label-eyebrow" style="color:rgba(255,255,255,.35);font-size:9px;">SALDO</div><div class="bal">${fmt(x.balance)}</div></div><div class="visa">${escapeHtml(net)}</div></div>
     </div>`;
@@ -561,7 +620,7 @@ function renderCarteiras(){
         <button onclick="openWalletModal('${w.id}')">Editar</button>
       </div>
     </div>
-    <button class="btn btn-black btn-full" onclick="openTransferModal()">⇄ Transferir entre carteiras</button>
+    <button class="btn btn-black btn-full" onclick="openTransferModal()" style="display:flex;align-items:center;justify-content:center;gap:6px;">${icon('arrow-left-right',16)} Transferir entre carteiras</button>
     <div style="text-align:center;color:#aaa;font-size:11px;margin-top:-6px;">Ex: M-Pesa → e-Mola</div>
     <button class="btn btn-outline btn-full" onclick="openWalletModal()">+ Nova carteira</button>
   </div>`;
@@ -582,8 +641,8 @@ function renderNova(){
   <div class="topbar"><div class="eyebrow">Registar movimento</div><h1>Nova transação</h1></div>
   <div class="screen">
     <div class="toggle-seg">
-      <button class="${isIn?'on-entrada':''}" onclick="setNovaType('entrada')">↑ Entrada</button>
-      <button class="${!isIn?'on-saida':''}" onclick="setNovaType('saida')">↓ Saída</button>
+      <button class="${isIn?'on-entrada':''}" onclick="setNovaType('entrada')" style="display:flex;align-items:center;justify-content:center;gap:6px;">${icon('arrow-up',14)} Entrada</button>
+      <button class="${!isIn?'on-saida':''}" onclick="setNovaType('saida')" style="display:flex;align-items:center;justify-content:center;gap:6px;">${icon('arrow-down',14)} Saída</button>
     </div>
     <div class="card-black">
       <div class="label-eyebrow">Valor em ${state.settings.currency}</div>
@@ -592,11 +651,11 @@ function renderNova(){
       <div class="ghost">trika</div>
     </div>
     <div class="keypad-grid">
-      ${['1','2','3','4','5','6','7','8','9','.','0','⌫'].map(k=>`<button class="${k==='⌫'?'del':''}" onclick="novaPressKey('${k==='⌫'?'DEL':k}')">${k}</button>`).join('')}
+      ${['1','2','3','4','5','6','7','8','9','.','0','DEL'].map(k=>`<button class="${k==='DEL'?'del':''}" onclick="novaPressKey('${k}')" style="display:flex;align-items:center;justify-content:center;">${k==='DEL'?icon('delete',18):k}</button>`).join('')}
     </div>
     <div>
       <label class="fl">Categoria</label>
-      <div class="pill-scroll">${cats.map((c,i)=>`<button class="pill-opt ${i===novaCatIdx?'sel':''}" onclick="setNovaCat(${i})">${c.icon} ${c.label}</button>`).join('')}</div>
+      <div class="pill-scroll">${cats.map((c,i)=>`<button class="pill-opt ${i===novaCatIdx?'sel':''}" onclick="setNovaCat(${i})" style="display:flex;align-items:center;gap:6px;">${icon(c.icon,14)} ${c.label}</button>`).join('')}</div>
     </div>
     <div>
       <label class="fl">Carteira</label>
@@ -649,7 +708,7 @@ function renderMetas(){
     const spent = cats[c.id]||0; const budget = state.budgets[c.id]; const p = pctOf(spent,budget); const over = p>=90;
     return `<div class="budget-row">
       <div class="top">
-        <div class="left"><div class="icon-circle">${c.icon}</div><div><div class="t">${c.label}</div><div class="s">${fmt(spent)} / ${fmt(budget)}</div></div></div>
+        <div class="left"><div class="icon-circle">${icon(c.icon)}</div><div><div class="t">${c.label}</div><div class="s">${fmt(spent)} / ${fmt(budget)}</div></div></div>
         <span class="pill-pct ${over?'high':''}">${p}%</span>
       </div>
       <div class="progress-track"><div class="fill" style="width:${p}%;background:${over?'var(--red)':c.color};"></div></div>
@@ -659,7 +718,7 @@ function renderMetas(){
   const goalCardsHtml = state.goals.map(g=>{
     const p = pctOf(g.saved,g.target); const isLime = g.color==='#D6FF3F';
     return `<div class="goal-black">
-      <div class="row"><div class="icn">${g.icon}</div>
+      <div class="row"><div class="icn">${icon(g.icon,20)}</div>
         <div><div class="name">${escapeHtml(g.name)}</div><div class="obj">Objectivo: ${fmt(g.target)}</div></div>
         <div class="goal-pct" style="background:${g.color};color:${isLime?'#000':'#fff'}">${p}%</div>
       </div>
@@ -667,8 +726,8 @@ function renderMetas(){
       <div class="saved-row"><span class="a">Poupado: <b style="color:${g.color};">${fmt(g.saved)}</b></span><span class="b">Em falta: ${fmt(Math.max(g.target-g.saved,0))}</span></div>
       <div style="display:flex;gap:8px;margin-top:12px;">
         <button onclick="addFundsModal('${g.id}')" style="flex:1;background:rgba(255,255,255,.08);border:none;border-radius:10px;padding:8px 0;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">＋ Adicionar</button>
-        <button onclick="openGoalModal('${g.id}')" style="flex:1;background:rgba(255,255,255,.08);border:none;border-radius:10px;padding:8px 0;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">✎ Editar</button>
-        <button onclick="deleteGoal('${g.id}')" style="flex:1;background:rgba(248,113,113,.12);border:none;border-radius:10px;padding:8px 0;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">🗑 Apagar</button>
+        <button onclick="openGoalModal('${g.id}')" style="flex:1;background:rgba(255,255,255,.08);border:none;border-radius:10px;padding:8px 0;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">${icon('pencil',13)} Editar</button>
+        <button onclick="deleteGoal('${g.id}')" style="flex:1;background:rgba(248,113,113,.12);border:none;border-radius:10px;padding:8px 0;color:var(--red);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">${icon('trash-2',13)} Apagar</button>
       </div>
     </div>`;
   }).join('');
@@ -700,21 +759,21 @@ function renderCompras(){
     const goal = state.goals.find(g=>g.id===l.goalId);
     const open = openShoppingId===l.id;
     const items = l.items.map(i=>`<div class="item-row">
-      <div class="check ${i.done?'done':''}" onclick="toggleItem('${l.id}','${i.id}')">${i.done?'✓':''}</div>
+      <div class="check ${i.done?'done':''}" onclick="toggleItem('${l.id}','${i.id}')">${i.done?icon('check',12):''}</div>
       <div class="desc ${i.done?'strike':''}" style="cursor:pointer;" onclick="editShoppingItemModal('${l.id}','${i.id}')">${escapeHtml(i.desc)}</div>
       <div class="val">${fmt(i.val)}</div>
-      <button onclick="deleteShoppingItem('${l.id}','${i.id}')" style="background:none;border:none;color:var(--red2);font-size:13px;cursor:pointer;padding:2px 4px;">🗑</button>
+      <button onclick="deleteShoppingItem('${l.id}','${i.id}')" style="background:none;border:none;color:var(--red2);cursor:pointer;padding:2px 4px;display:flex;align-items:center;">${icon('trash-2',15)}</button>
     </div>`).join('') || `<div style="text-align:center;padding:10px 0;color:#bbb;font-size:12.5px;">Sem itens ainda.</div>`;
     return `<div class="shop-card">
       <div class="head" onclick="toggleShoppingOpen('${l.id}')">
         <div class="bar" style="background:${over?'var(--red)':'var(--lime)'};"></div>
         <div style="flex:1;"><div class="t">${escapeHtml(l.name)}</div><div class="s">${done}/${l.items.length} itens · ${fmt(spent)} gastos</div></div>
         <div style="text-align:right;"><div class="pct" style="color:${over?'var(--red2)':'var(--green2)'};">${p}%</div><div class="s">do orçamento</div></div>
-        <button onclick="event.stopPropagation(); deleteShoppingList('${l.id}')" style="background:none;border:none;color:var(--red2);font-size:14px;cursor:pointer;padding:2px 6px;">🗑</button>
-        <span class="arrow">${open?'▲':'▼'}</span>
+        <button onclick="event.stopPropagation(); deleteShoppingList('${l.id}')" style="background:none;border:none;color:var(--red2);cursor:pointer;padding:2px 6px;display:flex;align-items:center;">${icon('trash-2',15)}</button>
+        <span class="arrow" style="display:flex;align-items:center;">${icon(open?'chevron-up':'chevron-down',14)}</span>
       </div>
       ${open?`<div class="shop-body">
-        ${goal?`<div class="linked-banner">${goal.icon} Ligada à meta: <b>${escapeHtml(goal.name)}</b></div>`:''}
+        ${goal?`<div class="linked-banner" style="display:flex;align-items:center;gap:8px;">${icon(goal.icon,15)} Ligada à meta: <b>${escapeHtml(goal.name)}</b></div>`:''}
         <div style="display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-bottom:6px;">
           <span>Orçamento: ${fmt(l.budget)}</span><span style="color:${over?'var(--red2)':'#aaa'};">Gasto: ${fmt(spent)}</span>
         </div>
@@ -779,15 +838,15 @@ function renderRecorrentes(){
     const mLabel = isNextMonth ? months[7] : 'Jul';
     return `<div class="rec-row">
       <div class="date-badge"><div class="d">${String(r.day).padStart(2,'0')}</div><div class="m">${mLabel}</div></div>
-      <div class="icon-circle">${r.icon}</div>
+      <div class="icon-circle">${icon(r.icon)}</div>
       <div class="info"><div class="t">${escapeHtml(r.name)}</div><div class="s">${r.freq} · próx: ${String(r.day).padStart(2,'0')} ${mLabel}</div></div>
       <div style="text-align:right;flex-shrink:0;">
         <div class="${r.type==='entrada'?'amt-pos':'amt-neg'}">${r.type==='entrada'?'+':'-'}${fmt(r.amount)}</div>
         <div style="font-size:9px;color:#bbb;text-transform:uppercase;letter-spacing:.04em;">${r.type==='entrada'?'entrada':'saída'}</div>
       </div>
       <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
-        <button onclick="openRecurringModal('${r.id}')" style="background:none;border:none;font-size:12px;cursor:pointer;padding:2px;color:#999;">✎</button>
-        <button onclick="deleteRecurring('${r.id}')" style="background:none;border:none;font-size:12px;cursor:pointer;padding:2px;color:var(--red2);">🗑</button>
+        <button onclick="openRecurringModal('${r.id}')" style="background:none;border:none;cursor:pointer;padding:2px;color:#999;display:flex;align-items:center;">${icon('pencil',14)}</button>
+        <button onclick="deleteRecurring('${r.id}')" style="background:none;border:none;cursor:pointer;padding:2px;color:var(--red2);display:flex;align-items:center;">${icon('trash-2',14)}</button>
       </div>
     </div>`;
   }).join('');
@@ -799,7 +858,7 @@ function renderRecorrentes(){
       <div class="card-black" style="padding:16px;"><div class="label-eyebrow">Entradas/mês</div><div style="font-size:18px;font-weight:800;color:var(--green);margin-top:4px;">+${fmt(ent)}</div></div>
       <div class="card-black" style="padding:16px;"><div class="label-eyebrow">Saídas/mês</div><div style="font-size:18px;font-weight:800;color:var(--red);margin-top:4px;">-${fmt(sai)}</div></div>
     </div>
-    <div class="insight-pill">📊 <span>Saldo recorrente mensal: <b style="color:var(--green2);">+${fmt(ent-sai)}</b></span></div>
+    <div class="insight-pill">${icon('bar-chart-3',16)} <span>Saldo recorrente mensal: <b style="color:var(--green2);">+${fmt(ent-sai)}</b></span></div>
     <div class="card"><h3 style="font-size:14px;font-weight:700;margin-bottom:16px;">Movimentos programados</h3>${rows}</div>
     <button class="btn btn-black btn-full" style="color:var(--lime);" onclick="openRecurringModal()">+ Novo recorrente</button>
   </div>`;
@@ -827,8 +886,8 @@ function renderPlanilhas(){
       </div>
       <div style="font-size:13px;font-weight:700;flex-shrink:0;" class="${t.type==='entrada'?'amt-pos':'amt-neg'}">${t.type==='entrada'?'+':'-'}${fmt(t.amount)}</div>
       <div style="display:flex;gap:4px;flex-shrink:0;">
-        <button onclick="editTransactionModal('${t.id}')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:4px;color:#999;">✎</button>
-        <button onclick="deleteTransaction('${t.id}')" style="background:none;border:none;font-size:14px;cursor:pointer;padding:4px;color:var(--red2);">🗑</button>
+        <button onclick="editTransactionModal('${t.id}')" style="background:none;border:none;cursor:pointer;padding:4px;color:#999;display:flex;align-items:center;">${icon('pencil',15)}</button>
+        <button onclick="deleteTransaction('${t.id}')" style="background:none;border:none;cursor:pointer;padding:4px;color:var(--red2);display:flex;align-items:center;">${icon('trash-2',15)}</button>
       </div>
     </div>`;
   }).join('');
@@ -839,10 +898,10 @@ function renderPlanilhas(){
   <div class="topbar"><div class="eyebrow">Importar / Exportar dados</div><h1>Planilhas</h1></div>
   <div class="screen">
     <div class="two-col">
-      <button class="btn btn-black" style="color:var(--lime);flex:1;" onclick="exportJSON()">↓ Exportar JSON</button>
-      <button class="btn btn-outline" style="flex:1;" onclick="exportCSV()">↓ Exportar CSV</button>
+      <button class="btn btn-black" style="color:var(--lime);flex:1;display:flex;align-items:center;justify-content:center;gap:6px;" onclick="exportJSON()">${icon('arrow-down',15)} Exportar JSON</button>
+      <button class="btn btn-outline" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;" onclick="exportCSV()">${icon('arrow-down',15)} Exportar CSV</button>
     </div>
-    <button class="btn btn-outline btn-full" onclick="triggerImport()">↑ Importar JSON</button>
+    <button class="btn btn-outline btn-full" style="display:flex;align-items:center;justify-content:center;gap:6px;" onclick="triggerImport()">${icon('arrow-up',15)} Importar JSON</button>
     <input type="file" id="importFile" accept="application/json" style="display:none;" onchange="importJSON(event)">
     <div class="two-col">
       <div class="stat-box" style="flex:1;"><div class="label-eyebrow">Entradas Jul</div><div class="val" style="color:var(--green2);font-size:16px;">+${fmt(ent)}</div></div>
@@ -853,7 +912,7 @@ function renderPlanilhas(){
       <input type="text" id="planSearch" placeholder="Pesquisar transação..." value="${escapeHtml(planFilterText)}" oninput="setPlanFilterText(this.value)" style="flex:1.4;">
       <select id="planCatFilter" onchange="setPlanFilterCat(this.value)" style="flex:1;">
         <option value="">Todas categorias</option>
-        ${allCatOpts.map(c=>`<option value="${c.id}" ${planFilterCat===c.id?'selected':''}>${c.icon} ${c.label}</option>`).join('')}
+        ${allCatOpts.map(c=>`<option value="${c.id}" ${planFilterCat===c.id?'selected':''}>${c.label}</option>`).join('')}
       </select>
     </div>
     ${(planFilterText||planFilterCat) ? `<div class="cancel-link" style="text-align:right;margin-top:-8px;" onclick="clearPlanFilters()">Limpar filtros</div>` : ''}
@@ -885,7 +944,7 @@ function editTransactionModal(id){
     <div class="fields">
       <div><label class="fl">Descrição</label><input type="text" id="m-tx-desc" value="${escapeHtml(t.name)}"></div>
       <div><label class="fl">Valor (${state.settings.currency})</label><input type="number" id="m-tx-val" value="${t.amount}"></div>
-      <div><label class="fl">Categoria</label><select id="m-tx-cat">${cats.map(c=>`<option value="${c.id}" ${c.id===t.catId?'selected':''}>${c.icon} ${c.label}</option>`).join('')}</select></div>
+      <div><label class="fl">Categoria</label><select id="m-tx-cat">${cats.map(c=>`<option value="${c.id}" ${c.id===t.catId?'selected':''}>${c.label}</option>`).join('')}</select></div>
       <div><label class="fl">Carteira</label><select id="m-tx-wallet">${state.wallets.map(w=>`<option value="${w.id}" ${w.id===t.walletId?'selected':''}>${escapeHtml(w.name)}</option>`).join('')}</select></div>
       <div><label class="fl">Data</label><input type="date" id="m-tx-date" value="${t.date}"></div>
     </div>
@@ -960,10 +1019,10 @@ function renderAgenda(){
       ${c.d}${c.hasTask?`<div class="cal-dot ${c.sel?'sel-dot':''}"></div>`:''}</div>`).join('');
   const tasks = state.calendarTasks[selectedDay] || [];
   const taskRows = tasks.map(t=>`<div class="task-row ${t.done?'done':''}">
-      <div class="check ${t.done?'done':''}" onclick="toggleTask('${selectedDay}','${t.id}')">${t.done?'✓':''}</div>
+      <div class="check ${t.done?'done':''}" onclick="toggleTask('${selectedDay}','${t.id}')">${t.done?icon('check',12):''}</div>
       <span style="flex:1;font-size:13px;font-weight:500;cursor:pointer;${t.done?'text-decoration:line-through;':''}" onclick="toggleTask('${selectedDay}','${t.id}')">${escapeHtml(t.text)}</span>
       <span class="task-cat-pill" style="background:${CAT_COLORS[t.cat]||'#ccc'}20;color:${CAT_COLORS[t.cat]||'#888'};">${t.cat}</span>
-      <button onclick="deleteTask('${selectedDay}','${t.id}')" style="background:none;border:none;font-size:13px;cursor:pointer;padding:2px 4px;color:var(--red2);">🗑</button></div>`).join('');
+      <button onclick="deleteTask('${selectedDay}','${t.id}')" style="background:none;border:none;cursor:pointer;padding:2px 4px;color:var(--red2);display:flex;align-items:center;">${icon('trash-2',14)}</button></div>`).join('');
   const [sy,sm,sd] = selectedDay.split('-');
   return `
   <div class="topbar"><div class="eyebrow">Agenda financeira</div><h1>Calendário</h1></div>
@@ -1015,12 +1074,12 @@ function renderComparacao(){
       <div class="card-black" style="padding:16px;"><div class="label-eyebrow">${jun.month.toUpperCase()} 2026</div>
         <div style="color:var(--green);font-weight:800;font-size:16px;margin-top:8px;">+${fmt(jun.receitas)}</div>
         <div style="color:var(--red);font-weight:600;font-size:13px;margin-top:4px;">-${fmt(jun.despesas)}</div>
-        <div style="font-weight:700;color:#aaa;margin-top:8px;border-top:1px solid rgba(255,255,255,.07);padding-top:8px;font-size:12px;">💰 ${fmt(jun.receitas-jun.despesas)}</div>
+        <div style="font-weight:700;color:#aaa;margin-top:8px;border-top:1px solid rgba(255,255,255,.07);padding-top:8px;font-size:12px;display:flex;align-items:center;gap:6px;">${icon('piggy-bank',14)} ${fmt(jun.receitas-jun.despesas)}</div>
       </div>
       <div class="card-black" style="padding:16px;"><div class="label-eyebrow">${jul.month.toUpperCase()} 2026</div>
         <div style="color:var(--green);font-weight:800;font-size:16px;margin-top:8px;">+${fmt(jul.receitas)}</div>
         <div style="color:var(--red);font-weight:600;font-size:13px;margin-top:4px;">-${fmt(jul.despesas)}</div>
-        <div style="font-weight:700;color:var(--lime);margin-top:8px;border-top:1px solid rgba(255,255,255,.07);padding-top:8px;font-size:12px;">💰 ${fmt(jul.receitas-jul.despesas)}</div>
+        <div style="font-weight:700;color:var(--lime);margin-top:8px;border-top:1px solid rgba(255,255,255,.07);padding-top:8px;font-size:12px;display:flex;align-items:center;gap:6px;">${icon('piggy-bank',14)} ${fmt(jul.receitas-jul.despesas)}</div>
       </div>
     </div>
     <div class="card"><h3 style="font-size:14px;font-weight:700;margin-bottom:16px;">Receitas vs Despesas (6 meses)</h3><div style="height:180px;"><canvas id="lineChart1"></canvas></div></div>
@@ -1089,15 +1148,15 @@ function renderConfig(){
       <div class="label-eyebrow" style="margin-bottom:8px;">Cópia de segurança</div>
       <div style="color:#aaa;font-size:12px;line-height:1.6;margin-bottom:14px;">Os dados vivem neste dispositivo. Exporte regularmente para não perder nada.</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
-        <button class="btn btn-black btn-full" style="color:var(--lime);" onclick="exportJSON()">↓ Exportar tudo (JSON)</button>
+        <button class="btn btn-black btn-full" style="color:var(--lime);display:flex;align-items:center;justify-content:center;gap:6px;" onclick="exportJSON()">${icon('arrow-down',15)} Exportar tudo (JSON)</button>
         <button class="btn btn-outline btn-full" onclick="exportCSV()">↓ Transações (CSV)</button>
-        <button class="btn btn-outline btn-full" onclick="triggerImport2()">↑ Importar JSON</button>
+        <button class="btn btn-outline btn-full" style="display:flex;align-items:center;justify-content:center;gap:6px;" onclick="triggerImport2()">${icon('arrow-up',15)} Importar JSON</button>
         <input type="file" id="importFile2" accept="application/json" style="display:none;" onchange="importJSON(event)">
       </div>
     </div>
     <div class="card">
       <div class="danger-title" style="margin-bottom:14px;">Zona de perigo</div>
-      <button class="btn btn-danger-out btn-full" onclick="wipeData()">🗑 Apagar todos os dados</button>
+      <button class="btn btn-danger-out btn-full" style="display:flex;align-items:center;justify-content:center;gap:6px;" onclick="wipeData()">${icon('trash-2',15)} Apagar todos os dados</button>
     </div>
     <div class="footer-credit">trika · por Pedro Halar Junior · Acto Studio © 2026</div>
   </div>`;
@@ -1182,7 +1241,7 @@ function openWalletModal(editId){
     </div>
     <div class="modal-error" id="modalError" style="display:none;"></div>
     <button class="confirm-btn" onclick="submitWalletModal(${w?`'${w.id}'`:'null'})">${w?'Guardar alterações':'Criar carteira'}</button>
-    ${w?`<button class="btn btn-danger-out btn-full" style="margin-top:10px;" onclick="deleteWallet('${w.id}')">🗑 Apagar carteira</button>`:''}
+    ${w?`<button class="btn btn-danger-out btn-full" style="margin-top:10px;display:flex;align-items:center;justify-content:center;gap:6px;" onclick="deleteWallet('${w.id}')">${icon('trash-2',15)} Apagar carteira</button>`:''}
     <div class="cancel-link" onclick="closeModal()">Cancelar</div>
   `);
 }
@@ -1260,7 +1319,7 @@ function submitTransferModal(){
 }
 
 function openBudgetModal(){
-  const opts = CATS_OUT.map(c=>`<option value="${c.id}">${c.icon} ${c.label}${state.budgets[c.id]!=null?` — actual ${fmt(state.budgets[c.id])}`:' — sem limite'}</option>`).join('');
+  const opts = CATS_OUT.map(c=>`<option value="${c.id}">${c.label}${state.budgets[c.id]!=null?` — actual ${fmt(state.budgets[c.id])}`:' — sem limite'}</option>`).join('');
   openModalHtml(`
     <div class="drag"></div>
     <h3>Editar limite mensal</h3>
@@ -1285,18 +1344,18 @@ function submitBudgetModal(){
   saveState(); closeModal(); render(); showToast(val===0?'Limite removido.':'Limite guardado.');
 }
 
-let modalGoalIcon = '🎯';
+let modalGoalIcon = 'target';
 function openGoalModal(editId){
   const g = editId ? state.goals.find(x=>x.id===editId) : null;
-  modalGoalIcon = g ? g.icon : '🎯';
-  const icons = ['🎯','✈️','🏠','🚗','🛡️','🎓','💍','📱','💻','🏥'];
+  modalGoalIcon = g ? g.icon : 'target';
+  const icons = ['target','plane','home','car','shield','graduation-cap','gem','smartphone','laptop','cross'];
   openModalHtml(`
     <div class="drag"></div>
     <h3>${g?'Editar meta':'Nova meta de poupança'}</h3>
     <div class="fields">
       <div><label class="fl">Nome</label><input type="text" id="m-goal-name" placeholder="Ex: Fundo de estudos" value="${g?escapeHtml(g.name):''}"></div>
       <div><label class="fl">Objectivo (${state.settings.currency})</label><input type="number" id="m-goal-target" placeholder="0.00" value="${g?g.target:''}"></div>
-      <div><label class="fl">Ícone</label><div class="emoji-grid" id="m-goal-icons">${icons.map(i=>`<div class="emoji-opt ${i===modalGoalIcon?'sel':''}" onclick="selectGoalIcon('${i}')">${i}</div>`).join('')}</div></div>
+      <div><label class="fl">Ícone</label><div class="emoji-grid" id="m-goal-icons">${icons.map(i=>`<div class="emoji-opt ${i===modalGoalIcon?'sel':''}" data-icon="${i}" onclick="selectGoalIcon('${i}')">${icon(i,18)}</div>`).join('')}</div></div>
     </div>
     <div class="modal-error" id="modalError" style="display:none;"></div>
     <button class="confirm-btn" onclick="submitGoalModal(${g?`'${g.id}'`:'null'})">${g?'Guardar alterações':'Criar meta'}</button>
@@ -1304,7 +1363,7 @@ function openGoalModal(editId){
 }
 function selectGoalIcon(i){
   modalGoalIcon = i;
-  document.querySelectorAll('#m-goal-icons .emoji-opt').forEach(el=>el.classList.toggle('sel', el.textContent.trim()===i));
+  document.querySelectorAll('#m-goal-icons .emoji-opt').forEach(el=>el.classList.toggle('sel', el.dataset.icon===i));
 }
 function submitGoalModal(editId){
   const name = document.getElementById('m-goal-name').value.trim();
@@ -1349,7 +1408,7 @@ function deleteGoal(id){
 }
 
 function openShoppingListModal(){
-  const goalOpts = `<option value="">Nenhuma</option>` + state.goals.map(g=>`<option value="${g.id}">${g.icon} ${escapeHtml(g.name)}</option>`).join('');
+  const goalOpts = `<option value="">Nenhuma</option>` + state.goals.map(g=>`<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');
   openModalHtml(`
     <div class="drag"></div>
     <h3>Nova lista de compras</h3>
@@ -1399,8 +1458,8 @@ function openRecurringModal(editId){
     <div class="drag"></div>
     <h3>${r?'Editar recorrente':'Novo recorrente'}</h3>
     <div class="toggle-seg" style="margin-bottom:14px;">
-      <button class="${modalRecurType==='saida'?'on-saida':''}" id="m-rec-saida" onclick="setModalRecurType('saida')">↓ Saída</button>
-      <button class="${modalRecurType==='entrada'?'on-entrada':''}" id="m-rec-entrada" onclick="setModalRecurType('entrada')">↑ Entrada</button>
+      <button class="${modalRecurType==='saida'?'on-saida':''}" id="m-rec-saida" onclick="setModalRecurType('saida')" style="display:flex;align-items:center;justify-content:center;gap:6px;">${icon('arrow-down',14)} Saída</button>
+      <button class="${modalRecurType==='entrada'?'on-entrada':''}" id="m-rec-entrada" onclick="setModalRecurType('entrada')" style="display:flex;align-items:center;justify-content:center;gap:6px;">${icon('arrow-up',14)} Entrada</button>
     </div>
     <div class="fields">
       <div><label class="fl">Nome</label><input type="text" id="m-rec-name" placeholder="Ex: Seguro auto" value="${r?escapeHtml(r.name):''}"></div>
@@ -1427,7 +1486,7 @@ function submitRecurringModal(editId){
     saveState(); closeModal(); render(); showToast('Recorrente actualizado.');
     return;
   }
-  state.recurring.push({ id:uid('r'), name, icon: modalRecurType==='entrada'?'💼':'🔁', amount, type:modalRecurType, freq:'Mensal', day:Math.min(31,Math.max(1,day)) });
+  state.recurring.push({ id:uid('r'), name, icon: modalRecurType==='entrada'?'briefcase':'repeat', amount, type:modalRecurType, freq:'Mensal', day:Math.min(31,Math.max(1,day)) });
   saveState(); closeModal(); render(); showToast('Recorrente criado.');
 }
 function deleteRecurring(id){
